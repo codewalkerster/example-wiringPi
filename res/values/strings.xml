@@ -32,5 +32,8 @@
     <string name="enable_PWM1">Enable PWM 1</string>
     <string name="duty">Duty</string>
     <string name="enable_PWM2">Enable PWM 2</string>
+    
+    <string name="Temperature">Temperature</string>
+    <string name="Pressure">Pressure</string>
 
 </resources>

@@ -32,6 +32,13 @@
 
 #include "lcd.h"
 
+#ifdef ANDROID
+#include <android/log.h>
+#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define LOG_TAG "wiringPiDev-android"
+#define printf	LOGI
+#endif
+
 #ifndef	TRUE
 #  define	TRUE	(1==1)
 #  define	FALSE	(1==2)
@@ -278,6 +285,7 @@ void lcdPosition (const int fd, int x, int y)
 
   lcd->cx = x ;
   lcd->cy = y ;
+  LOGI("%s, %d", __func__, __LINE__);
 }
 
 
@@ -387,10 +395,11 @@ int lcdInit (const int rows, const int cols, const int bits,
 
   if (! ((bits == 4) || (bits == 8)))
     return -1 ;
-
+LOGI("%s %d", __func__, __LINE__);
   if ((rows < 0) || (rows > 20))
     return -1 ;
 
+LOGI("%s %d", __func__, __LINE__);
   if ((cols < 0) || (cols > 20))
     return -1 ;
 
@@ -408,9 +417,11 @@ int lcdInit (const int rows, const int cols, const int bits,
   if (lcdFd == -1)
     return -1 ;
 
+LOGI("%s %d", __func__, __LINE__);
   lcd = (struct lcdDataStruct *)malloc (sizeof (struct lcdDataStruct)) ;
   if (lcd == NULL)
     return -1 ;
+LOGI("%s %d", __func__, __LINE__);
 
   lcd->rsPin   = rs ;
   lcd->strbPin = strb ;
@@ -491,5 +502,6 @@ int lcdInit (const int rows, const int cols, const int bits,
   putCommand (lcd, LCD_ENTRY   | LCD_ENTRY_ID) ;
   putCommand (lcd, LCD_CDSHIFT | LCD_CDSHIFT_RL) ;
 
+LOGI("%s %d", __func__, __LINE__);
   return lcdFd ;
 }

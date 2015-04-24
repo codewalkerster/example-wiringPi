@@ -1,7 +1,9 @@
 package com.hardkernel.wiringpi;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,31 +33,31 @@ public class MainActivity extends Activity {
     
     TabHost mTabHost;
     private final static String TAG = "example-wiringPi";
-    //Tinkering Kit {{{
+    //GPIO {{{
     private ToggleButton mBtn_GPIO;
     private final int DATA_UPDATE_PERIOD = 100; // 100ms
     private final int PORT_ADC1 = 0;   // ADC.AIN0
     private ProgressBar mPB_ADC;
     private final int ledPorts[] = {
-        97, // GPIOX.BIT0(#97)
+        97,  // GPIOX.BIT0(#97)
         108, // GPIOX.BIT11(#108)
         100, // GPIOX.BIT3(#100)
         101, // GPIOX.BIT4(#101)
         105, // GPIOX.BIT8(#105)
         106, // GPIOX.BIT9(#106)
         107, // GPIOX.BIT10(#107)
-        115,  // GPIOX.BIT18(#115)
-        116,  // GPIOX.BIT19(#116)
+        115, // GPIOX.BIT18(#115)
+        116, // GPIOX.BIT19(#116)
         88,  // GPIOY.BIT8(#88)
         83,  // GPIOY.BIT3(#83)
         87,  // GPIOY.BIT7(#87)
-        104,  // GPIOX.BIT7(#104)
-        102,  // GPIOX.BIT5(#102)
-        103,  // GPIOX.BIT6(#103)
+        104, // GPIOX.BIT7(#104)
+        102, // GPIOX.BIT5(#102)
+        103, // GPIOX.BIT6(#103)
         117, // GPIOX.BIT20(#117)
-        99, // GPIOX.BIT2(#99)
+        99,  // GPIOX.BIT2(#99)
         118, // GPIOX.BIT21(#118)
-        98, // GPIOX.BIT1(#98)
+        98,  // GPIOX.BIT1(#98)
     };
 
     private static final int[] CHECKBOX_IDS = {
@@ -66,19 +68,19 @@ public class MainActivity extends Activity {
     };
 
     private List<CheckBox>mLeds;
-    private boolean mStop;
+    private boolean mStopGPIO;
     private Process mProcess;
 
     private Handler handler = new Handler();
-    Runnable runnable = new Runnable() {
+    Runnable mRunnableGPIO = new Runnable() {
 
         @Override
         public void run() {
             // TODO Auto-generated method stub
-            update();
+            updateGPIO();
         }
     };
-    //Tinkering Kit }}}
+    //GPIO }}}
 
     //PWM {{{
     private RadioButton mRB_PWM1;
@@ -95,6 +97,39 @@ public class MainActivity extends Activity {
     private final String PWM_ENABLE = "/sys/devices/platform/pwm-ctrl/enable";
     private final String PWM_DUTY = "/sys/devices/platform/pwm-ctrl/duty";
     //PWM }}}
+    
+    //I2C {{{
+    private boolean mStopI2C;
+    private ToggleButton mBtn_I2C;
+    private TextView mTV_Temperature;
+    private TextView mTV_Pressure;
+    private int mLCDHandle = -1;
+    private String mTemperature;
+    private String mPressure;
+    Runnable mRunnableI2C = new Runnable() {
+
+        @Override
+        public void run() {
+            // TODO Auto-generated method stub
+            updateBMP085();
+            updateLCDDisplay();
+        }
+    };
+    
+    private final static int LCD_ROW = 2;   // 16 Char
+    private final static int LCD_COL = 16;  // 2 Line
+    private final static int LCD_BUS = 4;   // Interface 4 Bit mode
+    private final static int LCD_UPDATE_PERIOD = 300; // 300ms
+     
+    private final static int PORT_LCD_RS = 7;   // GPIOY.BIT3(#83)
+    private final static int PORT_LCD_E = 0;   // GPIOY.BIT8(#88)
+    private final static int PORT_LCD_D4 = 2;   // GPIOX.BIT19(#116)
+    private final static int PORT_LCD_D5 = 3;   // GPIOX.BIT18(#115)
+    private final static int PORT_LCD_D6 = 1;   // GPIOY.BIT7(#87)
+    private final static int PORT_LCD_D7 = 4;   // GPIOX.BIT7(#104)
+    private final static String TEMP_INPUT = "/sys/bus/i2c/drivers/bmp085/1-0077/temp0_input";
+    private final static String PRESSURE_INPUT = "/sys/bus/i2c/drivers/bmp085/1-0077/pressure0_input";
+    //I2C }}}
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,7 +147,7 @@ public class MainActivity extends Activity {
         tab1.setContent(R.id.tab1);
         tab2.setIndicator("PWM");
         tab2.setContent(R.id.tab2);
-        tab3.setIndicator("GPIO");
+        tab3.setIndicator("I2C");
         tab3.setContent(R.id.tab3);
 
         mTabHost.addTab(tab1);
@@ -126,12 +161,16 @@ public class MainActivity extends Activity {
                 // TODO Auto-generated method stub
                 if (mTabHost.getCurrentTabTag().equals("GPIO")) {
                     mBtn_PWM.setChecked(false);
+                    mBtn_I2C.setChecked(false);
                     Log.e(TAG, "GPIO");
                 } else if (mTabHost.getCurrentTabTag().equals("PWM")){
                     mBtn_GPIO.setChecked(false);
+                    mBtn_I2C.setChecked(false);
                     Log.e(TAG, "PWM");
                 } else if (mTabHost.getCurrentTabTag().equals("I2C")){
-
+                    mBtn_GPIO.setChecked(false);
+                    mBtn_PWM.setChecked(false);
+                    Log.e(TAG, "I2C");
                 }
             }
         });
@@ -149,12 +188,12 @@ public class MainActivity extends Activity {
 
                     wiringPiSetupSys();
 
-                    mStop = false;
-                    handler.postDelayed(runnable, 100);
+                    mStopGPIO = false;
+                    handler.postDelayed(mRunnableGPIO, 100);
                     for (CheckBox cb: mLeds)
                         cb.setEnabled(true);
                 } else {
-                    mStop = true;
+                    mStopGPIO = true;
                     for (CheckBox cb: mLeds) {
                         cb.setEnabled(false);
                     }
@@ -179,7 +218,7 @@ public class MainActivity extends Activity {
             CheckBox cb = (CheckBox) findViewById(id);
             mLeds.add(cb);
         }
-        //Tinkering Kit }}}
+        //GPIO }}}
 
         //PWM {{{
         mTV_Duty1 = (TextView) findViewById(R.id.tv_duty1);
@@ -320,6 +359,36 @@ public class MainActivity extends Activity {
         });
         mBtn_PWM.setChecked(false);
         //PWM }}}
+        
+        //I2C {{{
+        mBtn_I2C = (ToggleButton) findViewById(R.id.btn_i2c);
+        mBtn_I2C.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                // TODO Auto-generated method stub
+                if (isChecked) {
+                    insmodI2C();
+                    wiringPiSetupSys();
+                    mLCDHandle = lcdInit(LCD_ROW, LCD_COL, LCD_BUS, 
+                            PORT_LCD_RS, PORT_LCD_E, PORT_LCD_D4, PORT_LCD_D5, 
+                            PORT_LCD_D6, PORT_LCD_D7, 0, 0, 0, 0);
+                    Log.e(TAG, "mLCDHandler = " + mLCDHandle);
+                    if (mLCDHandle < 0)
+                        finish();
+                    mStopI2C = false;
+                    handler.postDelayed(mRunnableI2C, 100);
+                } else {
+                    mLCDHandle = -1;
+                    mStopI2C = true;
+                    rmmodI2C();
+                }
+            }
+        });
+        
+        mTV_Temperature = (TextView) findViewById(R.id.tv_temperature);
+        mTV_Pressure = (TextView) findViewById(R.id.tv_pressure);
+        //I2C }}}
     }
 
     @Override
@@ -339,10 +408,13 @@ public class MainActivity extends Activity {
         //PWM {{{
         mBtn_PWM.setChecked(false);
         //PWM }}}
+        //I2C {{{
+        mBtn_I2C.setChecked(false);
+        //I2C }}}
     }
 
-    //Tinkering Kit {{{
-    public void update() {
+    //GPIO {{{
+    public void updateGPIO() {
         int i = 0;
         int adcValue = 0;
         int ledPos = 0;
@@ -363,8 +435,8 @@ public class MainActivity extends Activity {
             mLeds.get(i).setChecked(true);
         }
 
-        if (!mStop)
-            handler.postDelayed(runnable, 100);
+        if (!mStopGPIO)
+            handler.postDelayed(mRunnableGPIO, 100);
     }
 
     boolean exportGPIO() {
@@ -405,7 +477,7 @@ public class MainActivity extends Activity {
 
         return true;
     }
-    //Tinkering Kit {{{
+    //GPIO {{{
 
     //PWM {{{
     private void insmodPWM() {
@@ -464,9 +536,103 @@ public class MainActivity extends Activity {
     }
     //PWM }}}
 
+    //I2C {{{
+    
+    private void insmodI2C() {
+        try {
+            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
+            os.writeBytes("insmod /system/lib/modules/i2c-algo-bit.ko\n");
+            os.writeBytes("insmod /system/lib/modules/aml_i2c.ko\n");
+            os.writeBytes("insmod /system/lib/modules/bmp085-i2c.ko\n");
+            os.flush();
+            Thread.sleep(100);
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }    
+
+    private void rmmodI2C() {
+        try {
+            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
+            os.writeBytes("rmmod bmp085_i2c\n");
+            os.writeBytes("rmmod aml_i2c\n");
+            os.flush();
+            Thread.sleep(100);
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    public void updateBMP085() {
+        try {
+            BufferedReader temp_reader = 
+                new BufferedReader(new FileReader(TEMP_INPUT));
+
+            String txt = "";
+ 
+            while((txt = temp_reader.readLine()) != null) {
+                float temp = Float.parseFloat(txt) / 10;
+                mTemperature = String.format("%.1f", temp);
+                mTemperature += " *C";
+                mTV_Temperature.setText(mTemperature);
+            }
+ 
+            temp_reader.close();
+ 
+            BufferedReader pressure_reader = 
+                new BufferedReader(new FileReader(PRESSURE_INPUT));
+
+            while((txt = pressure_reader.readLine()) != null) {
+                float temp = Float.parseFloat(txt) / 100;
+                mPressure = String.format("%.2f", temp);
+                mPressure += " hPa";
+                mTV_Pressure.setText(mPressure);
+            }
+ 
+            pressure_reader.close();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        if (!mStopI2C)
+            handler.postDelayed(mRunnableI2C, 100);
+    }
+    
+    private void updateLCDDisplay() {
+        if (mLCDHandle == -1)
+            return;
+
+        lcdPosition(mLCDHandle, 0, 0);
+        for (int i = 0; i < LCD_COL ; i++) {
+            lcdPutchar(mLCDHandle, 'a');
+            //lcdPutchar(mLCDHandle, mTemperature.charAt(i));
+        }
+        lcdPosition(mLCDHandle, 0, 1);
+        for (int i = 0; i < LCD_COL; i++) {
+            lcdPutchar(mLCDHandle, 'b');
+            //lcdPutchar(mLCDHandle, mPressure.charAt(i));
+        }
+    }
+
+    //I2C }}}
+
     public native int wiringPiSetupSys();
     public native int analogRead(int port);
     public native void digitalWrite(int port, int onoff);
+    public native int lcdInit(int rows, int cols, int bits,
+            int rs, int strb, 
+            int d0, int d1, int d2, int d3, int d4,
+            int d5, int d6, int d7);
+    public native void lcdPosition(int fd, int x, int y);
+    public native void lcdPutchar(int fd, char c);
 
     static {
         System.loadLibrary("wpi_android");
