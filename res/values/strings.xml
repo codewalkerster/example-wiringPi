@@ -5,7 +5,7 @@
     <string name="action_settings">Settings</string>
     <string name="ADC">ADC</string>
     <string name="LED">LED</string>
-    
+
     <string name="GPIO_24">GPIOX.BIT0(#97)</string>
     <string name="GPIO_23">GPIOX.BIT11(#108)</string>
     <string name="GPIO_22">GPIOX.BIT3(#100)</string>
@@ -25,7 +25,7 @@
     <string name="GPIO_26">GPIOX.BIT2(#99)</string>
     <string name="GPIO_11">GPIOX.BIT21(#118)</string>
     <string name="GPIO_27">GPIOX.BIT1(#98)</string>
-    
+
     <string name="PWM_COUNT">PWM Count : </string>
     <string name="one">1</string>
     <string name="two">2</string>
@@ -35,5 +35,11 @@
     
     <string name="Temperature">Temperature</string>
     <string name="Pressure">Pressure</string>
+
+    <string name="Visible_index">Visible index</string>
+    <string name="Lux">Lux</string>
+    <string name="UV">UV</string>
+
+    <string name="Humidity">Humidity</string>
 
 </resources>
