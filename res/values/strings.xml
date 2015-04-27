@@ -42,4 +42,8 @@
 
     <string name="Humidity">Humidity</string>
 
+    <string name="Write">echo /dev/ttyS2</string>
+
+    <string name="Read">cat /dev/ttyS2</string>
+
 </resources>

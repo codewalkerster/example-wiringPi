@@ -12,12 +12,15 @@ import java.util.List;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
@@ -173,6 +176,45 @@ public class MainActivity extends Activity {
     private final static int PORT_LCD_D7 = 4;   // GPIOX.BIT7(#104)
     //I2C }}}
 
+    //UART {{{
+    private boolean mStopSerial;
+    private Button mBtn_WriteSerial;
+    private EditText mET_Write;
+    private ToggleButton mBtn_ReadSerial;
+    private EditText mET_Read;
+    private String mLine;
+    Runnable mRunnableSerial = new Runnable() {
+
+        @Override
+        public void run() {
+            // TODO Auto-generated method stub
+
+            try {
+                BufferedReader br = new BufferedReader(new FileReader(TTYS2));
+                while (!mStopSerial) {
+                    while((mLine = br.readLine()) != null) {
+                        Log.e(TAG, mLine);
+                        mHandler.sendEmptyMessage(0);
+                    }
+                }
+                br.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    };
+    private final static String TTYS2 = "/dev/ttyS2";
+    private Handler mHandler = new Handler() {
+
+        @Override
+        public void handleMessage(Message msg) {
+            // TODO Auto-generated method stub
+            super.handleMessage(msg);
+            mET_Read.setText(mLine);
+        }
+    };
+    //UART }}}
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -184,6 +226,7 @@ public class MainActivity extends Activity {
         TabSpec tab1 = mTabHost.newTabSpec("GPIO");
         TabSpec tab2 = mTabHost.newTabSpec("PWM");
         TabSpec tab3 = mTabHost.newTabSpec("I2C");
+        TabSpec tab4 = mTabHost.newTabSpec("UART");
 
         tab1.setIndicator("GPIO");
         tab1.setContent(R.id.tab1);
@@ -191,10 +234,13 @@ public class MainActivity extends Activity {
         tab2.setContent(R.id.tab2);
         tab3.setIndicator("I2C");
         tab3.setContent(R.id.tab3);
+        tab4.setIndicator("UART");
+        tab4.setContent(R.id.tab4);
 
         mTabHost.addTab(tab1);
         mTabHost.addTab(tab2);
         mTabHost.addTab(tab3);
+        mTabHost.addTab(tab4);
 
         mTabHost.setOnTabChangedListener(new OnTabChangeListener() {
 
@@ -206,6 +252,7 @@ public class MainActivity extends Activity {
                 mBtn_SI1132.setChecked(false);
                 mBtn_SI702x.setChecked(false);
                 mBtn_GPIO.setChecked(false);
+                mBtn_ReadSerial.setChecked(false);
             }
         });
 
@@ -478,8 +525,37 @@ public class MainActivity extends Activity {
         mTV_Temperature2 = (TextView) findViewById(R.id.tv_temperature2);
         mTV_Humidity = (TextView) findViewById(R.id.tv_humidity);
         //SI1132 }}}
-
         //I2C }}}
+
+        //UART {{{
+        mET_Write = (EditText) findViewById(R.id.et_write);
+        mBtn_WriteSerial = (Button) findViewById(R.id.btn_write_serial);
+        mBtn_WriteSerial.setOnClickListener(new OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                // TODO Auto-generated method stub
+                writeSerial(mET_Write.getText().toString());
+                mET_Write.setText("");
+            }
+        });
+
+        mET_Read = (EditText) findViewById(R.id.et_read);
+        mBtn_ReadSerial = (ToggleButton) findViewById(R.id.btn_read_serial);
+        mBtn_ReadSerial.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                // TODO Auto-generated method stub
+                if (isChecked) {
+                    setBaudRate();
+                    mStopSerial = false;
+                    new Thread(mRunnableSerial).start();
+                } else
+                    mStopSerial = true;
+            }
+        });
+        //UART }}}
     }
 
     @Override
@@ -587,7 +663,7 @@ public class MainActivity extends Activity {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-    }    
+    }
 
     private void rmmodPWM() {
         try {
@@ -850,6 +926,34 @@ public class MainActivity extends Activity {
             handler.postDelayed(mRunnableSI702x, 100);
     }
     //SI702x }}}
+    //I2C }}}
+
+    //UART {{{
+    private void setBaudRate() {
+        try {
+            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
+            os.writeBytes("stty -F /dev/ttyS2 1152200\n");
+            os.flush();
+            Thread.sleep(100);
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    private void writeSerial(String data) {
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter(TTYS2));
+            bw.write(data);
+            bw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    //UART }}}
 
     private void updateLCDDisplay() {
         if (mLCDHandle == -1)
@@ -873,8 +977,6 @@ public class MainActivity extends Activity {
                 lcdPutchar(mLCDHandle, ' ');
         }
     }
-
-    //I2C }}}
 
     public native int wiringPiSetupSys();
     public native int analogRead(int port);
