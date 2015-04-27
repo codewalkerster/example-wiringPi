@@ -403,7 +403,6 @@ public class MainActivity extends Activity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 // TODO Auto-generated method stub
                 if (isChecked) {
-                    insmodBMP085();
                     //wiringPiSetupSys();
                     /*
                      mLCDHandle = lcdInit(LCD_ROW, LCD_COL, LCD_BUS, 
@@ -413,8 +412,11 @@ public class MainActivity extends Activity {
                     if (mLCDHandle < 0)
                         finish();
                     */
+                    mBtn_SI1132.setChecked(false);
+                    mBtn_SI702x.setChecked(false);
+                    insmodBMP085();
                     mStopBMP085 = false;
-                    handler.postDelayed(mRunnableBMP085, 100);
+                    handler.postDelayed(mRunnableBMP085, 300);
                 } else {
                     mLCDHandle = -1;
                     mStopBMP085 = true;
@@ -434,9 +436,11 @@ public class MainActivity extends Activity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 // TODO Auto-generated method stub
                 if (isChecked) {
+                    mBtn_BMP085.setChecked(false);
+                    mBtn_SI702x.setChecked(false);
                     insmodSI1132();
                     mStopSI1132 = false;
-                    handler.postDelayed(mRunnableSI1132, 100);
+                    handler.postDelayed(mRunnableSI1132, 300);
                 } else {
                     mLCDHandle = -1;
                     mStopSI1132 = true;
@@ -458,9 +462,11 @@ public class MainActivity extends Activity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 // TODO Auto-generated method stub
                 if (isChecked) {
+                    mBtn_BMP085.setChecked(false);
+                    mBtn_SI1132.setChecked(false);
                     insmodSI702x();
                     mStopSI702x = false;
-                    handler.postDelayed(mRunnableSI702x, 100);
+                    handler.postDelayed(mRunnableSI702x, 300);
                 } else {
                     mLCDHandle = -1;
                     mStopSI702x = true;
@@ -760,7 +766,7 @@ public class MainActivity extends Activity {
             while((txt = uv_reader.readLine()) != null) {
                 float temp = Float.parseFloat(txt) / 100;
                 mUV = String.format("%.1f", temp);
-                mUV += " Lux";
+                mUV += " index";
                 mTV_UV.setText(mUV);
             }
 
@@ -849,15 +855,22 @@ public class MainActivity extends Activity {
         if (mLCDHandle == -1)
             return;
 
+        // first line
         lcdPosition(mLCDHandle, 0, 0);
         for (int i = 0; i < LCD_COL ; i++) {
-            lcdPutchar(mLCDHandle, 'a');
-            //lcdPutchar(mLCDHandle, mTemperature.charAt(i));
+            if ( i < mTemperature.length() - 1)
+                lcdPutchar(mLCDHandle, mTemperature.charAt(i));
+            else
+                lcdPutchar(mLCDHandle, ' ');
         }
+
+        // second line
         lcdPosition(mLCDHandle, 0, 1);
         for (int i = 0; i < LCD_COL; i++) {
-            lcdPutchar(mLCDHandle, 'b');
-            //lcdPutchar(mLCDHandle, mPressure.charAt(i));
+            if (i < mPressure.length() - 1)
+                lcdPutchar(mLCDHandle, mPressure.charAt(i));
+            else
+                lcdPutchar(mLCDHandle, ' ');
         }
     }
 
