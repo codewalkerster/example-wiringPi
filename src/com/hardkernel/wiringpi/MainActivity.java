@@ -13,6 +13,8 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -529,7 +531,31 @@ public class MainActivity extends Activity {
 
         //UART {{{
         mET_Write = (EditText) findViewById(R.id.et_write);
+        mET_Write.addTextChangedListener(new TextWatcher() {
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // TODO Auto-generated method stub
+            }
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count,
+                    int after) {
+                // TODO Auto-generated method stub
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                // TODO Auto-generated method stub
+                if (s.length() > 0)
+                    mBtn_WriteSerial.setEnabled(true);
+                else
+                    mBtn_WriteSerial.setEnabled(false);
+            }
+        });
+
         mBtn_WriteSerial = (Button) findViewById(R.id.btn_write_serial);
+        mBtn_WriteSerial.setEnabled(false);
         mBtn_WriteSerial.setOnClickListener(new OnClickListener() {
 
             @Override
