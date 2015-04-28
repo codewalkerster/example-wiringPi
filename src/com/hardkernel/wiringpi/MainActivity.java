@@ -3,6 +3,7 @@ package com.hardkernel.wiringpi;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.app.Activity;
+import android.opengl.Visibility;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -217,6 +219,17 @@ public class MainActivity extends Activity {
     };
     //UART }}}
 
+    //1-Wire {{{
+    private ToggleButton mBtn_1Wire;
+    private final static String W1_BUS = "/sys/bus/w1/devices/";
+    private List<String> mIDs;
+    private Button mBtn_DS1820_1;
+    private EditText mET_DS1820_Info_1;
+    private LinearLayout mLO_DS1820_2;
+    private Button mBtn_DS1820_2;
+    private EditText mET_DS1820_Info_2;
+    //1-Wire }}}
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -229,6 +242,7 @@ public class MainActivity extends Activity {
         TabSpec tab2 = mTabHost.newTabSpec("PWM");
         TabSpec tab3 = mTabHost.newTabSpec("I2C");
         TabSpec tab4 = mTabHost.newTabSpec("UART");
+        TabSpec tab5 = mTabHost.newTabSpec("1-Wire");
 
         tab1.setIndicator("GPIO");
         tab1.setContent(R.id.tab1);
@@ -238,11 +252,14 @@ public class MainActivity extends Activity {
         tab3.setContent(R.id.tab3);
         tab4.setIndicator("UART");
         tab4.setContent(R.id.tab4);
+        tab5.setIndicator("1-Wire");
+        tab5.setContent(R.id.tab5);
 
         mTabHost.addTab(tab1);
         mTabHost.addTab(tab2);
         mTabHost.addTab(tab3);
         mTabHost.addTab(tab4);
+        mTabHost.addTab(tab5);
 
         mTabHost.setOnTabChangedListener(new OnTabChangeListener() {
 
@@ -255,6 +272,7 @@ public class MainActivity extends Activity {
                 mBtn_SI702x.setChecked(false);
                 mBtn_GPIO.setChecked(false);
                 mBtn_ReadSerial.setChecked(false);
+                mBtn_1Wire.setChecked(false);
             }
         });
 
@@ -403,7 +421,6 @@ public class MainActivity extends Activity {
             public void onClick(View v) {
                 // TODO Auto-generated method stub
                 mPWMCount = 2;
-                //mCB_EnablePWM1.setEnabled(true);
                 mLayout_PWM2.setVisibility(View.VISIBLE);
             }
         });
@@ -452,9 +469,9 @@ public class MainActivity extends Activity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 // TODO Auto-generated method stub
                 if (isChecked) {
-                    //wiringPiSetupSys();
                     /*
-                     mLCDHandle = lcdInit(LCD_ROW, LCD_COL, LCD_BUS, 
+                    wiringPiSetupSys();
+                    mLCDHandle = lcdInit(LCD_ROW, LCD_COL, LCD_BUS,
                             PORT_LCD_RS, PORT_LCD_E, PORT_LCD_D4, PORT_LCD_D5, 
                             PORT_LCD_D6, PORT_LCD_D7, 0, 0, 0, 0);
                     Log.e(TAG, "mLCDHandler = " + mLCDHandle);
@@ -477,6 +494,7 @@ public class MainActivity extends Activity {
         mTV_Temperature = (TextView) findViewById(R.id.tv_temperature);
         mTV_Pressure = (TextView) findViewById(R.id.tv_pressure);
         //BMP085 }}}
+
         //SI1173 {{{
         mBtn_SI1132 = (ToggleButton) findViewById(R.id.btn_si1132);
         mBtn_SI1132.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -582,6 +600,53 @@ public class MainActivity extends Activity {
             }
         });
         //UART }}}
+
+        //1-Wire {{{
+        mBtn_1Wire = (ToggleButton) findViewById(R.id.btn_1w);
+        mBtn_1Wire.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                // TODO Auto-generated method stub
+                if (isChecked) {
+                    insmod1Wire();
+                    mIDs = new ArrayList<String>();
+                    getDS1820ID(mIDs);
+                    mBtn_DS1820_1.setText(mBtn_DS1820_1.getText() + "(" +
+                            mIDs.get(0) + ")");
+                    if (mIDs.size() > 1) {
+                        mBtn_DS1820_2.setText(mBtn_DS1820_2.getText() + "(" +
+                            mIDs.get(1) + ")");
+                        mLO_DS1820_2.setVisibility(View.VISIBLE);
+                    }
+                } else
+                    rmmod1Wire();
+            }
+        });
+
+        mET_DS1820_Info_1 = (EditText) findViewById(R.id.et_ds1820_info_1);
+        mBtn_DS1820_1 = (Button) findViewById(R.id.btn_ds1829_1);
+        mBtn_DS1820_1.setOnClickListener(new OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                // TODO Auto-generated method stub
+                mET_DS1820_Info_1.setText(getDS1820Info(mIDs.get(0)));
+            }
+        });
+        mLO_DS1820_2 = (LinearLayout) findViewById(R.id.lo_ds1820_2);
+        mLO_DS1820_2.setVisibility(View.GONE);
+        mET_DS1820_Info_2 = (EditText) findViewById(R.id.et_ds1820_info_2);
+        mBtn_DS1820_2 = (Button) findViewById(R.id.btn_ds1820_2);
+        mBtn_DS1820_2.setOnClickListener(new OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                // TODO Auto-generated method stub
+                mET_DS1820_Info_2.setText(getDS1820Info(mIDs.get(1)));
+            }
+        });
+        //1-Wire }}}
     }
 
     @Override
@@ -605,6 +670,13 @@ public class MainActivity extends Activity {
         mBtn_BMP085.setChecked(false);
         mBtn_SI1132.setChecked(false);
         mBtn_SI702x.setChecked(false);
+        //I2C }}}
+        //UARD {{{
+        mBtn_ReadSerial.setChecked(false);
+        //UART }}}
+        //1-Wire {{{
+        mBtn_1Wire.setChecked(false);
+        //1-Wire }}}
         //I2C }}}
     }
 
@@ -980,6 +1052,73 @@ public class MainActivity extends Activity {
         }
     }
     //UART }}}
+
+    //1-Wire
+    private void insmod1Wire() {
+        try {
+            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
+            os.writeBytes("insmod /system/lib/modules/wire.ko\n");
+            os.writeBytes("insmod /system/lib/modules/w1-gpio.ko\n");
+            os.writeBytes("insmod /system/lib/modules/w1_therm.ko\n");
+            os.flush();
+            Thread.sleep(100);
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    private void rmmod1Wire() {
+        try {
+            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
+            os.writeBytes("rmmod w1_therm\n");
+            os.writeBytes("rmmod w1_gpio\n");
+            os.flush();
+            Thread.sleep(100);
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    private void getDS1820ID(List<String> ids) {
+        File[] files = new File(W1_BUS).listFiles();
+        for ( File aFile : files ) {
+             if (aFile.isDirectory()) {
+                 Log.e(TAG, aFile.getName());
+                 if (!aFile.getName().toString().equals("w1_bus_master1"))
+                     ids.add(aFile.getName());
+             }
+        }
+    }
+
+    private String getDS1820Info(String id) {
+        String info = "";
+        try {
+            BufferedReader w1_slave_reader =
+                new BufferedReader(new FileReader(W1_BUS + "/" + id + "/w1_slave"));
+
+            String txt = "";
+
+            while((txt = w1_slave_reader.readLine()) != null) {
+                info += txt + "\n";
+            }
+
+            info = info.trim();
+
+            w1_slave_reader.close();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return info;
+    }
+    //1-Wire
 
     private void updateLCDDisplay() {
         if (mLCDHandle == -1)

@@ -45,5 +45,8 @@
     <string name="Write">echo /dev/ttyS2</string>
 
     <string name="Read">cat /dev/ttyS2</string>
+    <string name="celcius">°C</string>
+    <string name="DS1820_ID">DS1820</string>
+    <string name="Dallas_1Wire">Dallas 1-Wire</string>
 
 </resources>
