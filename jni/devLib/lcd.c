@@ -285,7 +285,6 @@ void lcdPosition (const int fd, int x, int y)
 
   lcd->cx = x ;
   lcd->cy = y ;
-  LOGI("%s, %d", __func__, __LINE__);
 }
 
 
@@ -395,11 +394,10 @@ int lcdInit (const int rows, const int cols, const int bits,
 
   if (! ((bits == 4) || (bits == 8)))
     return -1 ;
-LOGI("%s %d", __func__, __LINE__);
+
   if ((rows < 0) || (rows > 20))
     return -1 ;
 
-LOGI("%s %d", __func__, __LINE__);
   if ((cols < 0) || (cols > 20))
     return -1 ;
 
@@ -417,11 +415,9 @@ LOGI("%s %d", __func__, __LINE__);
   if (lcdFd == -1)
     return -1 ;
 
-LOGI("%s %d", __func__, __LINE__);
   lcd = (struct lcdDataStruct *)malloc (sizeof (struct lcdDataStruct)) ;
   if (lcd == NULL)
     return -1 ;
-LOGI("%s %d", __func__, __LINE__);
 
   lcd->rsPin   = rs ;
   lcd->strbPin = strb ;
@@ -502,6 +498,5 @@ LOGI("%s %d", __func__, __LINE__);
   putCommand (lcd, LCD_ENTRY   | LCD_ENTRY_ID) ;
   putCommand (lcd, LCD_CDSHIFT | LCD_CDSHIFT_RL) ;
 
-LOGI("%s %d", __func__, __LINE__);
   return lcdFd ;
 }

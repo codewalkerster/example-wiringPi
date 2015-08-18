@@ -40,6 +40,7 @@
 
 const static char       *spiDev0  = "/dev/spidev0.0" ;
 const static char       *spiDev1  = "/dev/spidev0.1" ;
+const static char       *spiDev0_XU = "/dev/spidev1.0";
 const static uint8_t     spiMode  = 0 ;
 const static uint8_t     spiBPW   = 8 ;
 const static uint16_t    spiDelay = 0 ;
@@ -95,11 +96,30 @@ int wiringPiSPIDataRW (int channel, unsigned char *data, int len)
 int wiringPiSPISetup (int channel, int speed)
 {
   int fd ;
+  int model, rev, mem, maker, overVolted ;
+
+  piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
 
   channel &= 1 ;
 
-  if ((fd = open (channel == 0 ? spiDev0 : spiDev1, O_RDWR)) < 0)
-    return wiringPiFailure (WPI_ALMOST, "Unable to open SPI device: %s\n", strerror (errno)) ;
+  if (model == PI_MODEL_ODROIDXU_34)    {
+    if (channel)
+      return wiringPiFailure (WPI_ALMOST, "ODROID-XU3/4 cannot support spi-channel 1.\n") ;
+
+    if ((fd = open (spiDev0_XU, O_RDWR)) < 0)
+      return wiringPiFailure (WPI_ALMOST, "Unable to open SPI device: %s\n", strerror (errno)) ;
+  }
+  else if (model == PI_MODEL_ODROIDC)  {
+    if (channel)
+      return wiringPiFailure (WPI_ALMOST, "ODROID-C1/C1+ cannot support spi-channel 1.\n") ;
+
+    if ((fd = open (spiDev0, O_RDWR)) < 0)
+      return wiringPiFailure (WPI_ALMOST, "Unable to open SPI device: %s\n", strerror (errno)) ;
+  }
+  else  {
+    if ((fd = open (channel == 0 ? spiDev0 : spiDev1, O_RDWR)) < 0)
+      return wiringPiFailure (WPI_ALMOST, "Unable to open SPI device: %s\n", strerror (errno)) ;
+  }
 
   spiSpeeds [channel] = speed ;
   spiFds    [channel] = fd ;
