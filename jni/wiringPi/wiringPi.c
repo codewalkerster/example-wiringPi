@@ -2787,6 +2787,15 @@ int wiringPiSetupSys (void)
   int model, rev, mem, maker, overVolted ;
   int pin, offset;
   char fName [128] ;
+  int i = 0;
+
+  for (i = 0; i < sizeof(sysFds) / sizeof(sysFds[0]); i++) {
+    LOGI("sysFds[%d] = %d", i, sysFds[i]);
+    if (sysFds[i] != -1) {
+      close(sysFds[i]);
+      sysFds[i] = -1;
+    }
+  }
 
   if (getenv (ENV_DEBUG) != NULL)
     wiringPiDebug = TRUE ;
