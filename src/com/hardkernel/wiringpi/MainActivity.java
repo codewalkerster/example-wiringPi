@@ -77,22 +77,6 @@ public class MainActivity extends Activity {
     };
     //GPIO }}}
 
-    //PWM {{{
-    private RadioButton mRB_PWM1;
-    private RadioButton mRB_PWM2;
-    private ToggleButton mBtn_PWM;
-    private LinearLayout mLayout_PWM2;
-    private CheckBox mCB_EnablePWM1;
-    private CheckBox mCB_EnablePWM2;
-    private TextView mTV_Duty1;
-    private TextView mTV_Duty2;
-    private SeekBar mSB_DutyPWM1;
-    private SeekBar mSB_DutyPWM2;
-    private int mPWMCount = 1;
-    private final String PWM_ENABLE = "/sys/devices/platform/pwm-ctrl/enable";
-    private final String PWM_DUTY = "/sys/devices/platform/pwm-ctrl/duty";
-    //PWM }}}
-
     //I2C {{{
     //BMP085 {{{
     private boolean mStopBMP085;
@@ -227,34 +211,29 @@ public class MainActivity extends Activity {
         mTabHost.setup();
 
         TabSpec tab1 = mTabHost.newTabSpec("GPIO");
-        TabSpec tab2 = mTabHost.newTabSpec("PWM");
-        TabSpec tab3 = mTabHost.newTabSpec("I2C");
-        TabSpec tab4 = mTabHost.newTabSpec("UART");
-        TabSpec tab5 = mTabHost.newTabSpec("1-Wire");
+        TabSpec tab2 = mTabHost.newTabSpec("I2C");
+        TabSpec tab3 = mTabHost.newTabSpec("UART");
+        TabSpec tab4 = mTabHost.newTabSpec("1-Wire");
 
         tab1.setIndicator("GPIO");
         tab1.setContent(R.id.tab1);
-        tab2.setIndicator("PWM");
+        tab2.setIndicator("I2C");
         tab2.setContent(R.id.tab2);
-        tab3.setIndicator("I2C");
+        tab3.setIndicator("UART");
         tab3.setContent(R.id.tab3);
-        tab4.setIndicator("UART");
+        tab4.setIndicator("1-Wire");
         tab4.setContent(R.id.tab4);
-        tab5.setIndicator("1-Wire");
-        tab5.setContent(R.id.tab5);
 
         mTabHost.addTab(tab1);
         mTabHost.addTab(tab2);
         mTabHost.addTab(tab3);
         mTabHost.addTab(tab4);
-        mTabHost.addTab(tab5);
 
         mTabHost.setOnTabChangedListener(new OnTabChangeListener() {
 
             @Override
             public void onTabChanged(String tabId) {
                 // TODO Auto-generated method stub
-                mBtn_PWM.setChecked(false);
                 mBtn_BMP085.setChecked(false);
                 mBtn_SI1132.setChecked(false);
                 mBtn_SI702x.setChecked(false);
@@ -308,145 +287,6 @@ public class MainActivity extends Activity {
             mLeds.add(cb);
         }
         //GPIO }}}
-
-        //PWM {{{
-        mTV_Duty1 = (TextView) findViewById(R.id.tv_duty1);
-        mTV_Duty2 = (TextView) findViewById(R.id.tv_duty2);
-
-        mCB_EnablePWM1 = (CheckBox) findViewById(R.id.cb_pwm1);
-        mCB_EnablePWM1.setEnabled(false);
-        mCB_EnablePWM1.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                // TODO Auto-generated method stub
-                mSB_DutyPWM1.setEnabled(isChecked);
-                mSB_DutyPWM1.setProgress(0);
-                mTV_Duty1.setText("Duty : 0");
-                setEnalbePWM(0, isChecked);
-            }
-        });
-
-        mCB_EnablePWM2 = (CheckBox) findViewById(R.id.cb_pwm2);
-        mCB_EnablePWM2.setEnabled(false);
-        mCB_EnablePWM2.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                // TODO Auto-generated method stub
-                mSB_DutyPWM2.setEnabled(isChecked);
-                mSB_DutyPWM2.setProgress(0);
-                mTV_Duty2.setText("Duty : 0");
-                setEnalbePWM(1, isChecked);
-            }
-        });
-
-        mSB_DutyPWM1 = (SeekBar) findViewById(R.id.sb_duty1);
-        mSB_DutyPWM1.setEnabled(false);
-        mSB_DutyPWM1.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                // TODO Auto-generated method stub
-                mTV_Duty1.setText("Duty : " + seekBar.getProgress());
-                setDuty(0, seekBar.getProgress());
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                // TODO Auto-generated method stub
-            }
-
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress,
-                    boolean fromUser) {
-                // TODO Auto-generated method stub
-            }
-        });
-
-        mSB_DutyPWM2 = (SeekBar) findViewById(R.id.sb_duty2);
-        mSB_DutyPWM2.setEnabled(false);
-        mSB_DutyPWM2.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                // TODO Auto-generated method stub
-                mTV_Duty2.setText("Duty : " + seekBar.getProgress());
-                setDuty(1, seekBar.getProgress());
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                // TODO Auto-generated method stub
-            }
-
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress,
-                    boolean fromUser) {
-                // TODO Auto-generated method stub
-            }
-        });
-
-        mLayout_PWM2 = (LinearLayout) findViewById(R.id.lo_pwm2);
-        mLayout_PWM2.setVisibility(View.GONE);
- 
-        mRB_PWM1 = (RadioButton) findViewById(R.id.radio_pwm1);
-        mRB_PWM1.setOnClickListener(new OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                // TODO Auto-generated method stub
-                mPWMCount = 1;
-                mCB_EnablePWM2.setEnabled(false);
-                mLayout_PWM2.setVisibility(View.GONE);
-            }
-        });
-
-        mRB_PWM2 = (RadioButton) findViewById(R.id.radio_pwm2);
-        mRB_PWM2.setOnClickListener(new OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                // TODO Auto-generated method stub
-                mPWMCount = 2;
-                mLayout_PWM2.setVisibility(View.VISIBLE);
-            }
-        });
-
-        mTV_Duty1 = (TextView) findViewById(R.id.tv_duty1);
-        mTV_Duty2 = (TextView) findViewById(R.id.tv_duty2);
-
-        mBtn_PWM = (ToggleButton) findViewById(R.id.btn_pwm);
-        mBtn_PWM.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                // TODO Auto-generated method stub
-                if (isChecked) {
-                    insmodPWM();
-                    mCB_EnablePWM1.setEnabled(true);
-                    mCB_EnablePWM1.setChecked(false);
-                    mCB_EnablePWM2.setEnabled(true);
-                    mCB_EnablePWM2.setChecked(false);
-                    mSB_DutyPWM1.setProgress(0);
-                    mSB_DutyPWM2.setProgress(0);
-                    mRB_PWM1.setEnabled(false);
-                    mRB_PWM2.setEnabled(false);
-                } else {
-                    rmmodPWM();
-                    mCB_EnablePWM1.setEnabled(false);
-                    mCB_EnablePWM1.setChecked(false);
-                    mCB_EnablePWM2.setEnabled(false);
-                    mCB_EnablePWM2.setChecked(false);
-                    mSB_DutyPWM1.setProgress(0);
-                    mSB_DutyPWM2.setProgress(0);
-                    mRB_PWM1.setEnabled(true);
-                    mRB_PWM2.setEnabled(true);
-                }
-            }
-        });
-        mBtn_PWM.setChecked(false);
-        //PWM }}}
 
         //I2C {{{
         //BMP085 {{{
@@ -651,9 +491,6 @@ public class MainActivity extends Activity {
         //GPIO {{{
         mBtn_GPIO.setChecked(false);
         //GPIO }}}
-        //PWM {{{
-        mBtn_PWM.setChecked(false);
-        //PWM }}}
         //I2C {{{
         mBtn_BMP085.setChecked(false);
         mBtn_SI1132.setChecked(false);
@@ -734,63 +571,6 @@ public class MainActivity extends Activity {
         return true;
     }
     //GPIO {{{
-
-    //PWM {{{
-    private void insmodPWM() {
-        try {
-            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
-            os.writeBytes("insmod /system/lib/modules/pwm-meson.ko npwm=" + mPWMCount + "\n");
-            os.writeBytes("insmod /system/lib/modules/pwm-ctrl.ko\n");
-            os.flush();
-            Thread.sleep(100);
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
-    private void rmmodPWM() {
-        try {
-            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
-            os.writeBytes("rmmod pwm_ctrl\n");
-            os.writeBytes("rmmod pwm_meson\n");
-            os.flush();
-            Thread.sleep(100);
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
-    private void setEnalbePWM(int index, boolean enable) {
-        try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(PWM_ENABLE + index));
-            if (enable)
-                bw.write("1");
-            else
-                bw.write("0");
-            bw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void setDuty(int index, int duty) {
-        try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(PWM_DUTY + index));
-            bw.write(Integer.toString(duty));
-            bw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    //PWM }}}
 
     //I2C {{{
     //BMP085 {{{

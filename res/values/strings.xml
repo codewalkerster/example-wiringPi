@@ -26,13 +26,6 @@
     <string name="GPIO_11">GPIOX.BIT21(#118)</string>
     <string name="GPIO_27">GPIOX.BIT1(#98)</string>
 
-    <string name="PWM_COUNT">PWM Count : </string>
-    <string name="one">1</string>
-    <string name="two">2</string>
-    <string name="enable_PWM1">Enable PWM 1</string>
-    <string name="duty">Duty</string>
-    <string name="enable_PWM2">Enable PWM 2</string>
-    
     <string name="Temperature">Temperature</string>
     <string name="Pressure">Pressure</string>
 
@@ -52,8 +45,6 @@
     <string name="DS1820_ID">DS1820</string>
     <string name="Tinkering_Kit">Introduction C Tinkering Kit</string>
     <string name="Tinkering_Kit_link">http://odroid.com/dokuwiki/doku.php?id=en:c1_tinkering</string>
-    <string name="Hardware_PWM">Hardware PWM</string>
-    <string name="Hardware_PWM_link">http://odroid.com/dokuwiki/doku.php?id=en:c1_hardware_pwm</string>
     <string name="Weather_Board">Use to Weather-Board</string>
     <string name="Weather_Board_link">http://odroid.com/dokuwiki/doku.php?id=en:c1_wb_16x2lcd</string>
     <string name="Dallas_1Wire">Dallas 1-Wire Support</string>

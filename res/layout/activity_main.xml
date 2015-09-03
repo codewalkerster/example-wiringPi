@@ -16,7 +16,7 @@
         android:layout_height="match_parent" >
 
         <LinearLayout
-            android:id="@+id/tab5"
+            android:id="@+id/tab4"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
@@ -98,7 +98,7 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/tab4"
+            android:id="@+id/tab3"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
@@ -163,7 +163,7 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/tab3"
+            android:id="@+id/tab2"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
@@ -313,137 +313,6 @@
                         android:text="@string/Humidity"
                         android:textAppearance="?android:attr/textAppearanceMedium" />
                 </LinearLayout>
-            </LinearLayout>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/tab2"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:orientation="vertical" >
-
-            <TextView
-                android:id="@+id/textView13"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/Hardware_PWM"
-                android:textAppearance="?android:attr/textAppearanceLarge" />
-
-            <TextView
-                android:id="@+id/textView14"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:autoLink="web"
-                android:clickable="true"
-                android:text="@string/Hardware_PWM_link"
-                android:textAppearance="?android:attr/textAppearanceLarge" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:gravity="center_horizontal" >
-
-                <TextView
-                    android:id="@+id/textView3"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/PWM_COUNT"
-                    android:textAppearance="?android:attr/textAppearanceLarge" />
-
-                <RadioGroup
-                    android:id="@+id/rg_pwm_count"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal" >
-
-                    <RadioButton
-                        android:id="@+id/radio_pwm1"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true"
-                        android:text="@string/one" />
-
-                    <RadioButton
-                        android:id="@+id/radio_pwm2"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/two" />
-                </RadioGroup>
-            </LinearLayout>
-
-            <ToggleButton
-                android:id="@+id/btn_pwm"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="true"
-                android:text="ToggleButton" />
-
-            <LinearLayout
-                android:id="@+id/lo_pwm1"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:gravity="center_horizontal" >
-
-                <CheckBox
-                    android:id="@+id/cb_pwm1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="10dp"
-                    android:text="@string/enable_PWM1" />
-
-                <TextView
-                    android:id="@+id/tv_duty1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="10dp"
-                    android:layout_marginRight="10dp"
-                    android:text="@string/duty"
-                    android:textAppearance="?android:attr/textAppearanceMedium"
-                    android:width="100dp" />
-
-                <SeekBar
-                    android:id="@+id/sb_duty1"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginRight="10dp"
-                    android:layout_weight="1"
-                    android:max="1023" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/lo_pwm2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp" >
-
-                <CheckBox
-                    android:id="@+id/cb_pwm2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="10dp"
-                    android:text="@string/enable_PWM2" />
-
-                <TextView
-                    android:id="@+id/tv_duty2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="10dp"
-                    android:layout_marginRight="10dp"
-                    android:text="@string/duty"
-                    android:textAppearance="?android:attr/textAppearanceMedium"
-                    android:width="100dp" />
-
-                <SeekBar
-                    android:id="@+id/sb_duty2"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginRight="10dp"
-                    android:layout_weight="1"
-                    android:max="1023" />
             </LinearLayout>
         </LinearLayout>
 
