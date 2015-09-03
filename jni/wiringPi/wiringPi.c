@@ -690,13 +690,13 @@ static int  gpioFdOffsetXU34(int pin)
     int offset = -1;
 
     switch(pin) {
-        case  GPIO_X1_START...GPIO_X1_END:  offset = GPIO_X1_START + 0;  break;
-        case  GPIO_X2_START...GPIO_X2_END:  offset = GPIO_X2_START + 8;  break;
-        case  GPIO_X3_START...GPIO_X3_END:  offset = GPIO_X3_START + 16; break;
-        case  GPIO_A0_START...GPIO_A0_END:  offset = GPIO_A0_START + 24; break;
-        case  GPIO_A2_START...GPIO_A2_END:  offset = GPIO_A2_START + 32; break;
-        case  GPIO_B3_START...GPIO_B3_END:  offset = GPIO_B3_START + 40; break;
-        default :                           offset = -1;                 break;
+        case  GPIO_X1_START...GPIO_X1_END:  offset = (pin - GPIO_X1_START) + 0;     break;
+        case  GPIO_X2_START...GPIO_X2_END:  offset = (pin - GPIO_X2_START) + 8;     break;
+        case  GPIO_X3_START...GPIO_X3_END:  offset = (pin - GPIO_X3_START) + 16;    break;
+        case  GPIO_A0_START...GPIO_A0_END:  offset = (pin - GPIO_A0_START) + 24;    break;
+        case  GPIO_A2_START...GPIO_A2_END:  offset = (pin - GPIO_A2_START) + 32;    break;
+        case  GPIO_B3_START...GPIO_B3_END:  offset = (pin - GPIO_B3_START) + 40;    break;
+        default :                           offset = -1;                            break;
     }
     return  offset;
 }
@@ -1929,9 +1929,9 @@ void digitalWrite (int pin, int value)
         offset = gpioFdOffsetXU34(pin);
 
         if(offset != -1)
-            fd_pos = pin - offset;
+            fd_pos = offset;
         else
-            fd_pos = 63;
+            fd_pos = 0;
       }
       else
         fd_pos = pin;
@@ -2790,7 +2790,6 @@ int wiringPiSetupSys (void)
   int i = 0;
 
   for (i = 0; i < sizeof(sysFds) / sizeof(sysFds[0]); i++) {
-    LOGI("sysFds[%d] = %d", i, sysFds[i]);
     if (sysFds[i] != -1) {
       close(sysFds[i]);
       sysFds[i] = -1;
@@ -2844,20 +2843,20 @@ int wiringPiSetupSys (void)
 
 // Open and scan the directory, looking for exported GPIOs, and pre-open
 //	the 'value' interface to speed things up for later
-    for (pin = 0; pin < 255; pin++) {
+    for (pin = 0; pin < 64; pin++) {
 
       offset = gpioFdOffsetXU34(pin);
 
       if(offset != -1)    {
         sprintf (fName, "/sys/class/gpio/gpio%d/value", pin);
-        sysFds[pin - offset] = open (fName, O_RDWR);
+        sysFds[offset] = open (fName, O_RDWR);
       }
     }
   // ADC
   // ADC Fds[0] = ("/sys/devices/12d10000.adc/iio:device0/in_voltage0_raw")
   // ADC Fds[1] = ("/sys/devices/12d10000.adc/iio:device0/in_voltage3_raw")
-    adcFds [0] = open (piAinNode0, O_RDONLY) ;
-    adcFds [1] = open (piAinNode1, O_RDONLY) ;
+    adcFds [0] = open (piAinNode0_xu, O_RDONLY) ;
+    adcFds [1] = open (piAinNode1_xu, O_RDONLY) ;
   }
   else  {
     boardRev = piBoardRev () ;

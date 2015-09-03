@@ -45,32 +45,21 @@ public class MainActivity extends Activity {
     private final int PORT_ADC1 = 0;   // ADC.AIN0
     private ProgressBar mPB_ADC;
     private final int ledPorts[] = {
-        97,  // GPIOX.BIT0(#97)
-        108, // GPIOX.BIT11(#108)
-        100, // GPIOX.BIT3(#100)
-        101, // GPIOX.BIT4(#101)
-        105, // GPIOX.BIT8(#105)
-        106, // GPIOX.BIT9(#106)
-        107, // GPIOX.BIT10(#107)
-        115, // GPIOX.BIT18(#115)
-        116, // GPIOX.BIT19(#116)
-        88,  // GPIOY.BIT8(#88)
-        83,  // GPIOY.BIT3(#83)
-        87,  // GPIOY.BIT7(#87)
-        104, // GPIOX.BIT7(#104)
-        102, // GPIOX.BIT5(#102)
-        103, // GPIOX.BIT6(#103)
-        117, // GPIOX.BIT20(#117)
-        99,  // GPIOX.BIT2(#99)
-        118, // GPIOX.BIT21(#118)
-        98,  // GPIOX.BIT1(#98)
+        31,  // GPX2.7(#31)
+        30,  // GPX2.6(#30)
+        28,  // GPX2.4(#28)
+        189, // GPA2.4(#189)
+        191, // GPA2.6(#191)
+        192, // GPX2.7(#192)
+        22,  // GPX1.6(#22)
+        21,  // GPA1.5(#21)
+        174, // GPA0.3(#174)
+        18,  // GPX1.2(#18)
     };
 
     private static final int[] CHECKBOX_IDS = {
         R.id.led01, R.id.led02, R.id.led03, R.id.led04, R.id.led05,
-        R.id.led06, R.id.led07, R.id.led08, R.id.led09, R.id.led10,
-        R.id.led11, R.id.led12, R.id.led13, R.id.led14, R.id.led15,
-        R.id.led16, R.id.led17, R.id.led18, R.id.led19
+        R.id.led06, R.id.led07, R.id.led08, R.id.led09, R.id.led10
     };
 
     private List<CheckBox>mLeds;
@@ -685,6 +674,7 @@ public class MainActivity extends Activity {
         int adcValue = 0;
         int ledPos = 0;
         if ((adcValue = analogRead (PORT_ADC1)) > 0) {
+            adcValue = (4095 - adcValue) / 4;
             ledPos = (adcValue * ledPorts.length * 1000) / 1024;
             ledPos = (ledPorts.length - (ledPos / 1000));
             mPB_ADC.setProgress(adcValue);
@@ -692,12 +682,12 @@ public class MainActivity extends Activity {
             ledPos = 0;
 
         for (i = 0; i < ledPorts.length; i++) {
-            digitalWrite (ledPorts[i], 0);
+            digitalWrite(ledPorts[i], 0);
             mLeds.get(i).setChecked(false);
         }
 
         for (i = 0; i < ledPos; i++) {
-            digitalWrite (ledPorts[i], 1);
+            digitalWrite(ledPorts[i], 1);
             mLeds.get(i).setChecked(true);
         }
 
