@@ -100,8 +100,11 @@ public class MainActivity extends Activity {
     private SeekBar mSB_DutyPWM1;
     private SeekBar mSB_DutyPWM2;
     private int mPWMCount = 1;
-    private final String PWM_ENABLE = "/sys/devices/platform/pwm-ctrl/enable";
-    private final String PWM_DUTY = "/sys/devices/platform/pwm-ctrl/duty";
+    private final String PWM_PREFIX = "/sys/devices/pwm-ctrl.";
+    private final String PWM_ENABLE = "/enable";
+    private final String PWM_DUTY = "/duty";
+    private String mPWMEnableNode;
+    private String mPWMDutyNode;
     //PWM }}}
 
     //I2C {{{
@@ -351,6 +354,17 @@ public class MainActivity extends Activity {
                 setEnalbePWM(1, isChecked);
             }
         });
+
+        for (int i = 0; i < 100; i++) {
+            File f = new File(PWM_PREFIX + i);
+            if (f.isDirectory()) {
+                mPWMEnableNode = PWM_PREFIX + i + PWM_ENABLE;
+                Log.e(TAG, "pwm enable : " + mPWMEnableNode);
+                mPWMDutyNode = PWM_PREFIX + i + PWM_DUTY;
+                Log.e(TAG, "pwm duty : " + mPWMDutyNode);
+                break;
+            }
+        }
 
         mSB_DutyPWM1 = (SeekBar) findViewById(R.id.sb_duty1);
         mSB_DutyPWM1.setEnabled(false);
@@ -781,7 +795,7 @@ public class MainActivity extends Activity {
 
     private void setEnalbePWM(int index, boolean enable) {
         try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(PWM_ENABLE + index));
+            BufferedWriter bw = new BufferedWriter(new FileWriter(mPWMEnableNode + index));
             if (enable)
                 bw.write("1");
             else
@@ -794,7 +808,7 @@ public class MainActivity extends Activity {
 
     private void setDuty(int index, int duty) {
         try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(PWM_DUTY + index));
+            BufferedWriter bw = new BufferedWriter(new FileWriter(mPWMDutyNode + index));
             bw.write(Integer.toString(duty));
             bw.close();
         } catch (IOException e) {
