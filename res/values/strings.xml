@@ -51,7 +51,7 @@
     <string name="SI720x">SI720x</string>
     <string name="DS1820_ID">DS1820</string>
     <string name="Tinkering_Kit">Introduction C Tinkering Kit</string>
-    <string name="Tinkering_Kit_link">http://odroid.com/dokuwiki/doku.php?id=en:c1_tinkering</string>
+    <string name="Tinkering_Kit_link">http://odroid.com/dokuwiki/doku.php?id=en:c_tinkering</string>
     <string name="Hardware_PWM">Hardware PWM</string>
     <string name="Hardware_PWM_link">http://odroid.com/dokuwiki/doku.php?id=en:c1_hardware_pwm</string>
     <string name="Weather_Board">Use to Weather-Board</string>
