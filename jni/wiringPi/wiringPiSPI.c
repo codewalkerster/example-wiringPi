@@ -116,6 +116,9 @@ int wiringPiSPISetup (int channel, int speed)
     if ((fd = open (spiDev0, O_RDWR)) < 0)
       return wiringPiFailure (WPI_ALMOST, "Unable to open SPI device: %s\n", strerror (errno)) ;
   }
+  else if (model == PI_MODEL_ODROIDC2)	{
+      return wiringPiFailure (WPI_ALMOST, "ODROID-C2 cannot support spi-channel\n") ;
+  }
   else  {
     if ((fd = open (channel == 0 ? spiDev0 : spiDev1, O_RDWR)) < 0)
       return wiringPiFailure (WPI_ALMOST, "Unable to open SPI device: %s\n", strerror (errno)) ;

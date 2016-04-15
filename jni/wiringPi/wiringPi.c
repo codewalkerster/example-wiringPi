@@ -209,7 +209,7 @@ static volatile uint32_t *timerIrqRaw ;
 //	and PI_VERSION_X defines in wiringPi.h
 //	Only intended for the gpio command - use at your own risk!
 
-const char *piModelNames [8] =
+const char *piModelNames [9] =
 {
   "Unknown",
   "Model A",
@@ -219,6 +219,7 @@ const char *piModelNames [8] =
   "Model A+",
   "ODROID-C1/C1+",
   "ODROID-XU3/4",
+  "ODROID-C2",
 } ;
 
 const char *piRevisionNames [5] =
@@ -609,6 +610,33 @@ static int adcFds [2] = {
 } ;
 
 //
+// For ODROID-C2 Board
+//
+#define ODROIDC2_GPIO_MASK		(0xFFFFFF00)
+#define ODROIDC2_GPIO_BASE		0xC8834000
+
+#define C2_GPIO_PIN_BASE           136
+#define C2_GPIOY_PIN_START         (C2_GPIO_PIN_BASE + 75)
+#define C2_GPIOY_PIN_END           (C2_GPIO_PIN_BASE + 91)
+#define C2_GPIOX_PIN_START         (C2_GPIO_PIN_BASE + 92)
+#define C2_GPIOX_PIN_END           (C2_GPIO_PIN_BASE + 114)
+
+#define C2_GPIOX_FSEL_REG_OFFSET   0x118
+#define C2_GPIOX_OUTP_REG_OFFSET   0x119
+#define C2_GPIOX_INP_REG_OFFSET    0x11A
+#define C2_GPIOX_PUPD_REG_OFFSET   0x13E
+#define C2_GPIOX_PUEN_REG_OFFSET   0x14C
+
+#define C2_GPIOY_FSEL_REG_OFFSET   0x10F
+#define C2_GPIOY_OUTP_REG_OFFSET   0x110
+#define C2_GPIOY_INP_REG_OFFSET    0x111
+#define C2_GPIOY_PUPD_REG_OFFSET   0x13B
+#define C2_GPIOY_PUEN_REG_OFFSET   0x149
+
+#define C2_piAinNode0   "/sys/class/saradc/ch0"
+#define C2_piAinNode1   "/sys/class/saradc/ch1"
+
+//
 // For ODROID-XU3/4 Board
 //
 #define ODROIDXU_GPIO_MASK  (0xFFFFFF00)
@@ -690,13 +718,13 @@ static int  gpioFdOffsetXU34(int pin)
     int offset = -1;
 
     switch(pin) {
-        case  GPIO_X1_START...GPIO_X1_END:  offset = GPIO_X1_START + 0;  break;
-        case  GPIO_X2_START...GPIO_X2_END:  offset = GPIO_X2_START + 8;  break;
-        case  GPIO_X3_START...GPIO_X3_END:  offset = GPIO_X3_START + 16; break;
-        case  GPIO_A0_START...GPIO_A0_END:  offset = GPIO_A0_START + 24; break;
-        case  GPIO_A2_START...GPIO_A2_END:  offset = GPIO_A2_START + 32; break;
-        case  GPIO_B3_START...GPIO_B3_END:  offset = GPIO_B3_START + 40; break;
-        default :                           offset = -1;                 break;
+        case  GPIO_X1_START...GPIO_X1_END:  offset = (pin - GPIO_X1_START) + 0;     break;
+        case  GPIO_X2_START...GPIO_X2_END:  offset = (pin - GPIO_X2_START) + 8;     break;
+        case  GPIO_X3_START...GPIO_X3_END:  offset = (pin - GPIO_X3_START) + 16;    break;
+        case  GPIO_A0_START...GPIO_A0_END:  offset = (pin - GPIO_A0_START) + 24;    break;
+        case  GPIO_A2_START...GPIO_A2_END:  offset = (pin - GPIO_A2_START) + 32;    break;
+        case  GPIO_B3_START...GPIO_B3_END:  offset = (pin - GPIO_B3_START) + 40;    break;
+        default :                           offset = -1;                            break;
     }
     return  offset;
 }
@@ -724,9 +752,17 @@ static int  gpioToGPSETReg (int pin)
                 break;
         }
     }
+    else if (piModel == PI_MODEL_ODROIDC2)	{
+        if(pin >= C2_GPIOX_PIN_START && pin <= C2_GPIOX_PIN_END)
+		return  C2_GPIOX_OUTP_REG_OFFSET;
+        if(pin >= C2_GPIOY_PIN_START && pin <= C2_GPIOY_PIN_END)
+		return  C2_GPIOY_OUTP_REG_OFFSET;
+    }
     else    {
-        if(pin >= GPIOX_PIN_START && pin <= GPIOX_PIN_END)  return  GPIOX_OUTP_REG_OFFSET;
-        if(pin >= GPIOY_PIN_START && pin <= GPIOY_PIN_END)  return  GPIOY_OUTP_REG_OFFSET;
+        if(pin >= GPIOX_PIN_START && pin <= GPIOX_PIN_END)
+		return  GPIOX_OUTP_REG_OFFSET;
+        if(pin >= GPIOY_PIN_START && pin <= GPIOY_PIN_END)
+		return  GPIOY_OUTP_REG_OFFSET;
     }
 
     return  -1;
@@ -755,9 +791,17 @@ static int  gpioToGPLEVReg (int pin)
                 break;
         }
     }
+    else if (piModel == PI_MODEL_ODROIDC2)	{
+        if(pin >= C2_GPIOX_PIN_START && pin <= C2_GPIOX_PIN_END)
+		return  C2_GPIOX_INP_REG_OFFSET;
+        if(pin >= C2_GPIOY_PIN_START && pin <= C2_GPIOY_PIN_END)
+		return  C2_GPIOY_INP_REG_OFFSET;
+    }
     else    {
-        if(pin >= GPIOX_PIN_START && pin <= GPIOX_PIN_END)  return  GPIOX_INP_REG_OFFSET;
-        if(pin >= GPIOY_PIN_START && pin <= GPIOY_PIN_END)  return  GPIOY_INP_REG_OFFSET;
+        if(pin >= GPIOX_PIN_START && pin <= GPIOX_PIN_END)
+		return  GPIOX_INP_REG_OFFSET;
+        if(pin >= GPIOY_PIN_START && pin <= GPIOY_PIN_END)
+		return  GPIOY_INP_REG_OFFSET;
     }
 
     return  -1;
@@ -768,8 +812,18 @@ static int  gpioToGPLEVReg (int pin)
 //
 static int  gpioToPUENReg (int pin)
 {
-    if(pin >= GPIOX_PIN_START && pin <= GPIOX_PIN_END)  return  GPIOX_PUEN_REG_OFFSET;
-    if(pin >= GPIOY_PIN_START && pin <= GPIOY_PIN_END)  return  GPIOY_PUEN_REG_OFFSET;
+	if(piModel == PI_MODEL_ODROIDC2)	{
+		if(pin >= C2_GPIOX_PIN_START && pin <= C2_GPIOX_PIN_END)
+			return  C2_GPIOX_PUEN_REG_OFFSET;
+		if(pin >= C2_GPIOY_PIN_START && pin <= C2_GPIOY_PIN_END)
+			return  C2_GPIOY_PUEN_REG_OFFSET;
+	}
+	else	{
+		if(pin >= GPIOX_PIN_START && pin <= GPIOX_PIN_END)
+			return  GPIOX_PUEN_REG_OFFSET;
+		if(pin >= GPIOY_PIN_START && pin <= GPIOY_PIN_END)
+			return  GPIOY_PUEN_REG_OFFSET;
+	}
 
     return  -1;
 }
@@ -797,9 +851,17 @@ static int  gpioToPUPDReg (int pin)
                 break;
         }
     }
+    else if (piModel == PI_MODEL_ODROIDC2)	{
+        if(pin >= C2_GPIOX_PIN_START && pin <= C2_GPIOX_PIN_END)
+		return	C2_GPIOX_PUPD_REG_OFFSET;
+        if(pin >= C2_GPIOY_PIN_START && pin <= C2_GPIOY_PIN_END)
+		return  C2_GPIOY_PUPD_REG_OFFSET;
+    }
     else    {
-        if(pin >= GPIOX_PIN_START && pin <= GPIOX_PIN_END)  return  GPIOX_PUPD_REG_OFFSET;
-        if(pin >= GPIOY_PIN_START && pin <= GPIOY_PIN_END)  return  GPIOY_PUPD_REG_OFFSET;
+        if(pin >= GPIOX_PIN_START && pin <= GPIOX_PIN_END)
+		return  GPIOX_PUPD_REG_OFFSET;
+        if(pin >= GPIOY_PIN_START && pin <= GPIOY_PIN_END)
+		return  GPIOY_PUPD_REG_OFFSET;
     }
 
     return  -1;
@@ -828,9 +890,17 @@ static int  gpioToShiftReg (int pin)
                 break;
         }
     }
+    else if (piModel == PI_MODEL_ODROIDC2)	{
+        if(pin >= C2_GPIOX_PIN_START && pin <= C2_GPIOX_PIN_END)
+		return  pin - C2_GPIOX_PIN_START;
+        if(pin >= C2_GPIOY_PIN_START && pin <= C2_GPIOY_PIN_END)
+		return  pin - C2_GPIOY_PIN_START;
+    }
     else    {
-        if(pin >= GPIOX_PIN_START && pin <= GPIOX_PIN_END)  return  pin - GPIOX_PIN_START;
-        if(pin >= GPIOY_PIN_START && pin <= GPIOY_PIN_END)  return  pin - GPIOY_PIN_START;
+        if(pin >= GPIOX_PIN_START && pin <= GPIOX_PIN_END)
+		return  pin - GPIOX_PIN_START;
+        if(pin >= GPIOY_PIN_START && pin <= GPIOY_PIN_END)
+		return  pin - GPIOY_PIN_START;
     }
 
     return  -1;
@@ -859,9 +929,17 @@ static int  gpioToGPFSELReg (int pin)
                 break;
         }
     }
+    else if (piModel == PI_MODEL_ODROIDC2)	{
+        if(pin >= C2_GPIOX_PIN_START && pin <= C2_GPIOX_PIN_END)
+		return  C2_GPIOX_FSEL_REG_OFFSET;
+        if(pin >= C2_GPIOY_PIN_START && pin <= C2_GPIOY_PIN_END)
+		return  C2_GPIOY_FSEL_REG_OFFSET;
+    }
     else    {
-        if(pin >= GPIOX_PIN_START && pin <= GPIOX_PIN_END)  return  GPIOX_FSEL_REG_OFFSET;
-        if(pin >= GPIOY_PIN_START && pin <= GPIOY_PIN_END)  return  GPIOY_FSEL_REG_OFFSET;
+        if(pin >= GPIOX_PIN_START && pin <= GPIOX_PIN_END)
+		return  GPIOX_FSEL_REG_OFFSET;
+        if(pin >= GPIOY_PIN_START && pin <= GPIOY_PIN_END)
+		return  GPIOY_FSEL_REG_OFFSET;
     }
 
     return  -1;
@@ -907,6 +985,98 @@ static int physToGpioOdroidC [64] =
  100,  99,
  108,  -1,
   97,  98,
+  -1,  -1,
+  -1,  -1, // 39, 40
+
+// Not used
+  -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1,
+} ;
+
+//
+// pinToGpio:
+//	Take a Wiring pin (0 through X) and re-map it to the ODROIDC2_GPIO pin
+//
+static int pinToGpioOdroidC2_Rev1_1 [64] = {
+   247, 238, 239, 237, 236, 233, 231, 249, // 0..7
+    -1,  -1, 229, 225, 235, 232, 230,  -1, // 8..15
+    -1,  -1,  -1,  -1,  -1, 228, 219, 234, // 16..23
+   214,  -1, 224, 218,  -1,  -1,  -1,  -1, // 24..31
+// Padding:
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 47
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 63
+};
+
+
+static int pinToGpioOdroidC2_Rev1_0 [64] = {
+   219, 218, 247,  -1, 235, 233, 234, 214, // 0..7
+    -1,  -1, 248, 249, 238, 237, 236,  -1, // 8..15
+    -1,  -1,  -1,  -1,  -1, 232, 231, 239, // 16..23
+   228,  -1, 230, 229,  -1,  -1,  -1,  -1, // 24..31
+// Padding:
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 47
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 63
+};
+
+//
+// physToGpio:
+//	Take a physical pin (1 through 40) and re-map it to the ODROIDC2_GPIO pin
+//
+static int physToGpioOdroidC2_Rev1_1 [64] =
+{
+  -1,       // 0
+  -1,  -1,	// 1, 2
+  -1,  -1,
+  -1,  -1,
+ 249,  -1,
+  -1,  -1,
+ 247, 238,
+ 239,  -1,
+ 237, 236,
+  -1, 233,
+ 235,  -1,
+ 232, 231,
+ 230, 229,
+  -1, 225,	// 25, 26
+
+  -1,  -1,
+ 228,  -1,
+ 219, 224,
+ 234,  -1,
+ 214, 218,
+  -1,  -1,
+  -1,  -1, // 39, 40
+
+// Not used
+  -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1,
+} ;
+
+
+static int physToGpioOdroidC2_Rev1_0 [64] =
+{
+  -1,       // 0
+  -1,  -1,	// 1, 2
+  -1,  -1,
+  -1,  -1,
+ 214,  -1,
+  -1,  -1,
+ 219, 218,
+ 247,  -1,
+  -1, 235,
+  -1, 233,
+ 238,  -1,
+ 237, 234,
+ 236, 248,
+  -1, 249,	// 25, 26
+
+  -1,  -1,
+ 232,  -1,
+ 231, 230,
+ 239,  -1,
+ 228, 229,
   -1,  -1,
   -1,  -1, // 39, 40
 
@@ -1009,6 +1179,42 @@ int wiringPiFailure (int fatal, const char *message, ...)
   return 0 ;
 }
 
+const char wpi_mode_str[4][20] = {
+	"WPI_MODE_PINS",
+	"WPI_MODE_GPIO",
+	"WPI_MODE_GPIO_SYS",
+	"WPI_MODE_PHYS",
+};
+
+void wiringPiGpioCheck (const char *call_func, int origPin, int pin)
+{
+    if (wiringPiMode == WPI_MODE_PINS || wiringPiMode == WPI_MODE_PHYS)
+    {
+	// maybe pin is not gpio.
+	if ( pin < 0 ) {
+		(void)wiringPiFailure (WPI_FATAL,
+			"\n**************** %s ****************\n"	\
+			"\nCall Function = %s, wiringPiMode = %s\n"	\
+			"\nError gpio control (OrigPin = %d, pin = %d)\n\n",
+			__func__, call_func, wpi_mode_str[wiringPiMode],
+			origPin, pin);
+	}
+    }
+    else {
+	int i;
+	for(i = 0; i < 64; i++)	{
+		if (origPin == pinToGpio[i])	break;
+	}
+	if (i == 64) {
+		(void)wiringPiFailure (WPI_FATAL,
+			"\n**************** %s ****************\n"	\
+			"\nCall Function = %s, wiringPiMode = %s\n"	\
+			"\nCannot found gpio pin! (OrigPin = %d)\n\n",
+			__func__, call_func, wpi_mode_str[wiringPiMode],
+			origPin);
+	}
+    }
+}
 
 /*
  * piBoardRev:
@@ -1040,6 +1246,10 @@ int wiringPiFailure (int fatal, const char *message, ...)
  *  000a - Model ODROID C1/C1+, Rev 1.0, 1024M, Hardkernel
  *  added :
  *  0100 - Model ODROID XU3/4, Rev 1.0, 2048M, Hardkernel
+ *  added :
+ *  020b - Model ODROID C2, 2048M, Hardkernel
+ *         Rev 1.0 : /sys/class/odroid/boardrev value is 0 (Dev board)
+ *         Rev 1.1 : /sys/class/odroid/boardrev value is 1 (Mass board)
  *
  *	A small thorn is the olde style overvolting - that will add in
  *		1000000
@@ -1127,6 +1337,21 @@ int piBoardRev (void)
   else
     boardRev = 2;
 
+  if (strcmp (c, "020b") == 0) {
+	int fd = 0;
+	char buf[2];
+
+	if ((fd = open ("/sys/class/odroid/boardrev", O_RDONLY)) < 0) {
+		printf ("ERROR : file not found.(boardrev)\n");
+		boardRev = 1;
+	}
+	else {
+		read (fd, buf, sizeof(buf));
+		close(fd);
+		boardRev = atoi(buf) + 1;
+	}
+  }
+
   if (wiringPiDebug)
     printf ("piBoardRev: Returning revision: %d\n", boardRev) ;
 
@@ -1212,12 +1437,15 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *overVolted)
   else if (strcmp (c, "0100") == 0) {
     *model = PI_MODEL_ODROIDXU_34;  *rev = PI_VERSION_1;  *mem = 2048;  *maker = PI_MAKER_HARDKERNEL;
   }
+  else if (strcmp (c, "020b") == 0)	{
+    *model = PI_MODEL_ODROIDC2; *mem = 2048;  *maker = PI_MAKER_HARDKERNEL;
+    *rev = piBoardRev ();
+  }
   else  {
     *model = 0; *rev = 0; *mem = 0; *maker = 0 ;
   }
   piModel = *model;
 }
- 
 
 
 /*
@@ -1256,9 +1484,12 @@ void setPadDrive (int group, int value)
 {
   uint32_t wrVal ;
 
-  if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34)  {
-    fprintf (stderr, "%s : Unsupport function on %s model\n", __func__, piModelNames [piModel]);
-    exit (EXIT_FAILURE) ;
+  if ( 	piModel == PI_MODEL_ODROIDC  ||
+	piModel == PI_MODEL_ODROIDC2 ||
+	piModel == PI_MODEL_ODROIDXU_34)  {
+	fprintf (stderr, "%s : Unsupport function on %s model\n",
+		__func__, piModelNames [piModel]);
+	exit (EXIT_FAILURE) ;
   }
 
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
@@ -1291,7 +1522,7 @@ int getAlt (int pin)
 
   if     ( piModel == PI_MODEL_ODROIDC )
     pin &= 0x7F;
-  else if( piModel == PI_MODEL_ODROIDXU_34 )
+  else if( piModel == PI_MODEL_ODROIDXU_34 || piModel == PI_MODEL_ODROIDC2 )
     pin &= 0xFF;
   else
     pin &= 63 ;
@@ -1303,7 +1534,7 @@ int getAlt (int pin)
   else if (wiringPiMode != WPI_MODE_GPIO)
     return 0 ;
 
-  if     ( piModel == PI_MODEL_ODROIDC )  {
+  if     ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 )  {
 
     if(pin < 0)   return  2;  // ALT
 
@@ -1343,9 +1574,12 @@ int getAlt (int pin)
 
 void pwmSetMode (int mode)
 {
-  if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34)  {
-    fprintf (stderr, "%s : Unsupport function on %s model\n", __func__, piModelNames [piModel]);
-    exit (EXIT_FAILURE) ;
+  if ( 	piModel == PI_MODEL_ODROIDC  ||
+	piModel == PI_MODEL_ODROIDC2 ||
+	piModel == PI_MODEL_ODROIDXU_34)  {
+	fprintf (stderr, "%s : Unsupport function on %s model\n",
+		__func__, piModelNames [piModel]);
+	exit (EXIT_FAILURE) ;
   }
 
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
@@ -1367,9 +1601,12 @@ void pwmSetMode (int mode)
 
 void pwmSetRange (unsigned int range)
 {
-  if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34)  {
-    fprintf (stderr, "%s : Unsupport function on %s model\n", __func__, piModelNames [piModel]);
-    exit (EXIT_FAILURE) ;
+  if ( 	piModel == PI_MODEL_ODROIDC  ||
+	piModel == PI_MODEL_ODROIDC2 ||
+	piModel == PI_MODEL_ODROIDXU_34)  {
+	fprintf (stderr, "%s : Unsupport function on %s model\n",
+		__func__, piModelNames [piModel]);
+	exit (EXIT_FAILURE) ;
   }
 
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
@@ -1393,15 +1630,18 @@ void pwmSetClock (int divisor)
   uint32_t pwm_control ;
   divisor &= 4095 ;
 
-  if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34)  {
-    fprintf (stderr, "%s : Unsupport function on %s model\n", __func__, piModelNames [piModel]);
-    exit (EXIT_FAILURE) ;
+  if ( 	piModel == PI_MODEL_ODROIDC  ||
+	piModel == PI_MODEL_ODROIDC2 ||
+	piModel == PI_MODEL_ODROIDXU_34)  {
+	fprintf (stderr, "%s : Unsupport function on %s model\n",
+		__func__, piModelNames [piModel]);
+	exit (EXIT_FAILURE) ;
   }
 
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
   {
     if (wiringPiDebug)
-      printf ("Setting to: %d. Current: 0x%08X\n", divisor, *(clk + PWMCLK_DIV)) ;
+      printf ("Setting to: %d. Current: 0x%08X\n", divisor, *(clk + PWMCLK_DIV));
 
     pwm_control = *(pwm + PWM_CONTROL) ;		// preserve PWM_CONTROL
 
@@ -1428,7 +1668,7 @@ void pwmSetClock (int divisor)
     *(pwm + PWM_CONTROL) = pwm_control ;		// restore PWM_CONTROL
 
     if (wiringPiDebug)
-      printf ("Set     to: %d. Now    : 0x%08X\n", divisor, *(clk + PWMCLK_DIV)) ;
+      printf ("Set     to: %d. Now    : 0x%08X\n", divisor, *(clk + PWMCLK_DIV));
   }
 }
 
@@ -1443,9 +1683,12 @@ void gpioClockSet (int pin, int freq)
 {
   int divi, divr, divf ;
 
-  if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34)  {
-    fprintf (stderr, "%s : Unsupport function on %s model\n", __func__, piModelNames [piModel]);
-    exit (EXIT_FAILURE) ;
+  if ( 	piModel == PI_MODEL_ODROIDC  ||
+	piModel == PI_MODEL_ODROIDC2 ||
+	piModel == PI_MODEL_ODROIDXU_34)  {
+	fprintf (stderr, "%s : Unsupport function on %s model\n",
+		__func__, piModelNames [piModel]);
+	exit (EXIT_FAILURE) ;
   }
 
   pin &= 63 ;
@@ -1517,7 +1760,7 @@ struct wiringPiNodeStruct *wiringPiNewNode (int pinBase, int numPins)
     if (pinBase < 128)
         (void)wiringPiFailure (WPI_FATAL, "wiringPiNewNode: pinBase of %d is < 128\n", pinBase) ;
   }
-  else if ( piModel == PI_MODEL_ODROIDXU_34 )   {
+  else if ( piModel == PI_MODEL_ODROIDXU_34 || piModel == PI_MODEL_ODROIDC2 )   {
     // Minimum pin base is 256
     if (pinBase < 256)
         (void)wiringPiFailure (WPI_FATAL, "wiringPiNewNode: pinBase of %d is < 256\n", pinBase) ;
@@ -1585,9 +1828,12 @@ void pinModeAlt (int pin, int mode)
 {
   int fSel, shift ;
 
-  if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34)  {
-    fprintf (stderr, "%s : Unsupport function on %s model\n", __func__, piModelNames [piModel]);
-    exit (EXIT_FAILURE) ;
+  if (	piModel == PI_MODEL_ODROIDC  ||
+	piModel == PI_MODEL_ODROIDC2 ||
+	piModel == PI_MODEL_ODROIDXU_34)  {
+	fprintf (stderr, "%s : Unsupport function on %s model\n",
+		__func__, piModelNames [piModel]);
+	exit (EXIT_FAILURE) ;
   }
 
   if ((pin & PI_GPIO_MASK) == 0)		// On-board pin
@@ -1620,7 +1866,8 @@ void pinMode (int pin, int mode)
   int origPin = pin ;
   unsigned int  gpio_mask = PI_GPIO_MASK;
 
-  if ( piModel == PI_MODEL_ODROIDC )       gpio_mask = ODROIDC_GPIO_MASK;
+  if ( piModel == PI_MODEL_ODROIDC  )      gpio_mask = ODROIDC_GPIO_MASK;
+  if ( piModel == PI_MODEL_ODROIDC2 )      gpio_mask = ODROIDC2_GPIO_MASK;
   if ( piModel == PI_MODEL_ODROIDXU_34 )   gpio_mask = ODROIDXU_GPIO_MASK;
 
   if ((pin & gpio_mask) == 0)		// On-board pin
@@ -1632,6 +1879,8 @@ void pinMode (int pin, int mode)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return ;
 
+    wiringPiGpioCheck (__func__, origPin, pin);
+
     softPwmStop  (origPin) ;
     softToneStop (origPin) ;
 
@@ -1639,7 +1888,7 @@ void pinMode (int pin, int mode)
     shift   = gpioToShift  [pin] ;
 
     if (mode == INPUT) {
-      if      ( piModel == PI_MODEL_ODROIDC )
+      if      ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 )
         *(gpio + gpioToGPFSELReg(pin)) = (*(gpio + gpioToGPFSELReg(pin)) |  (1 << gpioToShiftReg(pin)));
       else if ( piModel == PI_MODEL_ODROIDXU_34 )   {
         shift = (gpioToShiftReg(pin) * 4);
@@ -1652,7 +1901,7 @@ void pinMode (int pin, int mode)
         *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)); // Sets bits to zero = input
     }
     else if (mode == OUTPUT)  {
-      if      ( piModel == PI_MODEL_ODROIDC )
+      if      ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 )
         *(gpio + gpioToGPFSELReg(pin)) = (*(gpio + gpioToGPFSELReg(pin)) & ~(1 << gpioToShiftReg(pin)));
       else if ( piModel == PI_MODEL_ODROIDXU_34 )   {
         shift = (gpioToShiftReg(pin) * 4);
@@ -1669,20 +1918,26 @@ void pinMode (int pin, int mode)
         *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (1 << shift);
     }
     else if (mode == SOFT_PWM_OUTPUT) {
-      if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34 )
+      if (piModel == PI_MODEL_ODROIDC  ||
+	  piModel == PI_MODEL_ODROIDC2 ||
+	  piModel == PI_MODEL_ODROIDXU_34 )
             softPwmCreate (pin,     0, 100);
       else
             softPwmCreate (origPin, 0, 100);
     }
     else if (mode == SOFT_TONE_OUTPUT)  {
-      if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34 )
+      if (piModel == PI_MODEL_ODROIDC  ||
+	  piModel == PI_MODEL_ODROIDC2 ||
+	  piModel == PI_MODEL_ODROIDXU_34 )
             softToneCreate (pin);
       else
             softToneCreate (origPin);
     }
     else if (mode == PWM_TONE_OUTPUT)
     {
-      if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34 )
+      if (piModel == PI_MODEL_ODROIDC  ||
+	  piModel == PI_MODEL_ODROIDC2 ||
+	  piModel == PI_MODEL_ODROIDXU_34 )
         return;
 
       pinMode (origPin, PWM_OUTPUT) ;	// Call myself to enable PWM mode
@@ -1690,7 +1945,9 @@ void pinMode (int pin, int mode)
     }
     else if (mode == PWM_OUTPUT)
     {
-      if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34 )
+      if (piModel == PI_MODEL_ODROIDC  ||
+	  piModel == PI_MODEL_ODROIDC2 ||
+	  piModel == PI_MODEL_ODROIDXU_34 )
         return;
 
       if ((alt = gpioToPwmALT [pin]) == 0)	// Not a hardware capable PWM pin
@@ -1707,7 +1964,9 @@ void pinMode (int pin, int mode)
     }
     else if (mode == GPIO_CLOCK)
     {
-      if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34 )
+      if (piModel == PI_MODEL_ODROIDC  ||
+	  piModel == PI_MODEL_ODROIDC2 ||
+	  piModel == PI_MODEL_ODROIDXU_34 )
         return;
 
       if ((alt = gpioToGpClkALT0 [pin]) == 0)	// Not a GPIO_CLOCK pin
@@ -1742,8 +2001,10 @@ void pullUpDnControl (int pin, int pud)
 {
   struct wiringPiNodeStruct *node = wiringPiNodes ;
   unsigned int  gpio_mask = PI_GPIO_MASK;
+  int origPin = pin;
 
   if ( piModel == PI_MODEL_ODROIDC )        gpio_mask = ODROIDC_GPIO_MASK;
+  if ( piModel == PI_MODEL_ODROIDC2 )       gpio_mask = ODROIDC2_GPIO_MASK;
   if ( piModel == PI_MODEL_ODROIDXU_34 )    gpio_mask = ODROIDXU_GPIO_MASK;
 
   if ((pin & gpio_mask) == 0)		// On-Board Pin
@@ -1755,10 +2016,9 @@ void pullUpDnControl (int pin, int pud)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return ;
 
-    if( piModel == PI_MODEL_ODROIDC ) {
+    wiringPiGpioCheck (__func__, origPin, pin);
 
-      // maybe pin mode is not gpio.
-      if(pin < 0)  return;
+    if( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 ) {
 
       if(pud) {
         // Enable Pull/Pull-down resister
@@ -1774,9 +2034,6 @@ void pullUpDnControl (int pin, int pud)
     }
     else if ( piModel == PI_MODEL_ODROIDXU_34)  {
       int shift = 0;
-
-      // maybe pin mode is not gpio.
-      if(pin < 0)  return;
 
       shift = (gpioToShiftReg(pin) * 2);
 
@@ -1805,11 +2062,11 @@ void pullUpDnControl (int pin, int pud)
       }
     }
     else  {
-      *(gpio + GPPUD)              = pud & 3 ;		    delayMicroseconds (5) ;
-      *(gpio + gpioToPUDCLK [pin]) = 1 << (pin & 31) ;	delayMicroseconds (5) ;
+      *(gpio + GPPUD)              = pud & 3;		delayMicroseconds (5) ;
+      *(gpio + gpioToPUDCLK [pin]) = 1 << (pin & 31);	delayMicroseconds (5) ;
 
-      *(gpio + GPPUD)              = 0 ;			delayMicroseconds (5) ;
-      *(gpio + gpioToPUDCLK [pin]) = 0 ;			delayMicroseconds (5) ;
+      *(gpio + GPPUD)              = 0 ;		delayMicroseconds (5) ;
+      *(gpio + gpioToPUDCLK [pin]) = 0 ;		delayMicroseconds (5) ;
     }
   }
   else  // Extension module
@@ -1832,8 +2089,10 @@ int digitalRead (int pin)
   char c ;
   struct wiringPiNodeStruct *node = wiringPiNodes ;
   unsigned int  gpio_mask = PI_GPIO_MASK;
+  int origPin = pin;
 
   if ( piModel == PI_MODEL_ODROIDC )        gpio_mask = ODROIDC_GPIO_MASK;
+  if ( piModel == PI_MODEL_ODROIDC2 )       gpio_mask = ODROIDC2_GPIO_MASK;
   if ( piModel == PI_MODEL_ODROIDXU_34 )    gpio_mask = ODROIDXU_GPIO_MASK;
 
   if ((pin & gpio_mask) == 0)		// On-Board Pin
@@ -1844,6 +2103,9 @@ int digitalRead (int pin)
 
       if      ( piModel == PI_MODEL_ODROIDC )   {
         fd_pos = pin < GPIO_PIN_BASE ? 0: pin - GPIO_PIN_BASE;
+      }
+      else if ( piModel == PI_MODEL_ODROIDC2 )	{
+        fd_pos = pin < C2_GPIOY_PIN_START ? 63 : pin - C2_GPIOY_PIN_START;
       }
       else if ( piModel == PI_MODEL_ODROIDXU_34 )   {
         int offset = 0;
@@ -1872,7 +2134,9 @@ int digitalRead (int pin)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return LOW ;
 
-    if      ( piModel == PI_MODEL_ODROIDC )  {
+    wiringPiGpioCheck (__func__, origPin, pin);
+
+    if      ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 )  {
       if ((*(gpio + gpioToGPLEVReg(pin)) & (1 << gpioToShiftReg(pin))) != 0)
         return HIGH ;
       else
@@ -1910,8 +2174,10 @@ void digitalWrite (int pin, int value)
 {
   struct wiringPiNodeStruct *node = wiringPiNodes ;
   unsigned int  gpio_mask = PI_GPIO_MASK;
+  int origPin = pin;
 
   if ( piModel == PI_MODEL_ODROIDC )        gpio_mask = ODROIDC_GPIO_MASK;
+  if ( piModel == PI_MODEL_ODROIDC2 )       gpio_mask = ODROIDC2_GPIO_MASK;
   if ( piModel == PI_MODEL_ODROIDXU_34 )    gpio_mask = ODROIDXU_GPIO_MASK;
 
   if ((pin & gpio_mask) == 0)		// On-Board Pin
@@ -1922,6 +2188,9 @@ void digitalWrite (int pin, int value)
 
       if      ( piModel == PI_MODEL_ODROIDC )   {
         fd_pos = pin < GPIO_PIN_BASE ? 0: pin - GPIO_PIN_BASE;
+      }
+      else if ( piModel == PI_MODEL_ODROIDC2 )	{
+        fd_pos = pin < C2_GPIOY_PIN_START ? 63 : pin - C2_GPIOY_PIN_START;
       }
       else if ( piModel == PI_MODEL_ODROIDXU_34 )   {
         int offset = 0;
@@ -1952,7 +2221,9 @@ void digitalWrite (int pin, int value)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return ;
 
-    if      ( piModel == PI_MODEL_ODROIDC )  {
+    wiringPiGpioCheck (__func__, origPin, pin);
+
+    if      ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 )  {
       if (value == LOW)
         *(gpio + gpioToGPSETReg(pin)) &= ~(1 << gpioToShiftReg(pin));
       else
@@ -1992,8 +2263,13 @@ void pwmWrite (int pin, int value)
   struct wiringPiNodeStruct *node = wiringPiNodes ;
   unsigned int  gpio_mask = PI_GPIO_MASK;
 
-  if ( piModel == PI_MODEL_ODROIDC )        gpio_mask = ODROIDC_GPIO_MASK;
-  if ( piModel == PI_MODEL_ODROIDXU_34 )    gpio_mask = ODROIDXU_GPIO_MASK;
+  if (	piModel == PI_MODEL_ODROIDC  ||
+	piModel == PI_MODEL_ODROIDC2 ||
+	piModel == PI_MODEL_ODROIDXU_34)  {
+	fprintf (stderr, "%s : Unsupport function on %s model\n",
+		__func__, piModelNames [piModel]);
+	exit (EXIT_FAILURE) ;
+  }
 
   if ((pin & gpio_mask) == 0)		// On-Board Pin
   {
@@ -2004,12 +2280,7 @@ void pwmWrite (int pin, int value)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return ;
 
-    if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34)  {
-      fprintf (stderr, "%s : Unsupport function on %s model\n", __func__, piModelNames [piModel]);
-      exit (EXIT_FAILURE) ;
-    }
-    else
-      *(pwm + gpioToPwmPort [pin]) = value ;
+    *(pwm + gpioToPwmPort [pin]) = value ;
   }
   else
   {
@@ -2032,7 +2303,9 @@ int analogRead (int pin)
   struct wiringPiNodeStruct *node = wiringPiNodes ;
   unsigned char value[5] = {0,};
 
-  if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34 )  {
+  if (  piModel == PI_MODEL_ODROIDC  ||
+	piModel == PI_MODEL_ODROIDC2 ||
+	piModel == PI_MODEL_ODROIDXU_34 )  {
     if(pin < 2)   {
       if (adcFds [pin] == -1)
         return 0;
@@ -2079,9 +2352,12 @@ void pwmToneWrite (int pin, int freq)
 {
   int range ;
 
-  if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34)  {
-    fprintf (stderr, "%s : Unsupport function on %s model\n", __func__, piModelNames [piModel]);
-    exit (EXIT_FAILURE) ;
+  if (	piModel == PI_MODEL_ODROIDC  ||
+	piModel == PI_MODEL_ODROIDC2 ||
+	piModel == PI_MODEL_ODROIDXU_34)  {
+	fprintf (stderr, "%s : Unsupport function on %s model\n",
+		__func__, piModelNames [piModel]);
+	exit (EXIT_FAILURE) ;
   }
 
   if (freq == 0)
@@ -2114,9 +2390,12 @@ void digitalWriteByte (int value)
   int mask = 1 ;
   int pin ;
 
-  if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34 )  {
-    fprintf (stderr, "%s : Unsupport function on %s model\n", __func__, piModelNames [piModel]);
-    exit (EXIT_FAILURE) ;
+  if (	piModel == PI_MODEL_ODROIDC  ||
+	piModel == PI_MODEL_ODROIDC2 ||
+	piModel == PI_MODEL_ODROIDXU_34)  {
+	fprintf (stderr, "%s : Unsupport function on %s model\n",
+		__func__, piModelNames [piModel]);
+	exit (EXIT_FAILURE) ;
   }
 
   /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)
@@ -2169,9 +2448,14 @@ int waitForInterrupt (int pin, int mS)
   else if (wiringPiMode == WPI_MODE_PHYS)
     pin = physToGpio [pin & 63] ;
 
-  if ( piModel == PI_MODEL_ODROIDC )  {
+  if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 )  {
 
-    fd_base = pin < GPIO_PIN_BASE ? 0: pin - GPIO_PIN_BASE;
+	if ( piModel == PI_MODEL_ODROIDC2 )	{
+	    fd_base = pin < C2_GPIOY_PIN_START ? 63: pin - C2_GPIOY_PIN_START;
+	}
+	else	{
+	    fd_base = pin < GPIO_PIN_BASE ? 0: pin - GPIO_PIN_BASE;
+	}
 
     if ((fd = sysFds [fd_base & 63]) == -1)
       return -2 ;
@@ -2223,7 +2507,8 @@ wait:
   (void)read (fd, &c, 1) ;
   lseek (fd, 0, SEEK_SET) ;
 
-  if ( piModel == PI_MODEL_ODROIDC && piThreadIrqMode)
+  if (  (piModel == PI_MODEL_ODROIDC  && piThreadIrqMode) ||
+	(piModel == PI_MODEL_ODROIDC2 && piThreadIrqMode) )
   {
     if ( sysFdData[fd_base] != c )  {
       sysFdData[fd_base] = c;
@@ -2256,7 +2541,9 @@ static void *interruptHandler (void *arg)
   myPin   = pinPass ;
   pinPass = -1 ;
 
-  if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDXU_34 )  {
+  if (  piModel == PI_MODEL_ODROIDC  ||
+	piModel == PI_MODEL_ODROIDC2 ||
+	piModel == PI_MODEL_ODROIDXU_34 )  {
     int gpioPin, fd_base;
 
     /**/ if (wiringPiMode == WPI_MODE_UNINITIALISED)
@@ -2268,8 +2555,10 @@ static void *interruptHandler (void *arg)
     else
       gpioPin = myPin ;
 
-    if ( piModel == PI_MODEL_ODROIDC )
-        fd_base = gpioPin < GPIO_PIN_BASE ? 0 : gpioPin - GPIO_PIN_BASE;
+    if      ( piModel == PI_MODEL_ODROIDC )
+	fd_base = gpioPin < GPIO_PIN_BASE      ? 0 : gpioPin - GPIO_PIN_BASE;
+    else if ( piModel == PI_MODEL_ODROIDC2 )
+	fd_base = gpioPin < C2_GPIOY_PIN_START ? 63: gpioPin - C2_GPIOY_PIN_START;
     else    {
         int offset = 0;
 
@@ -2328,7 +2617,7 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
     if ((pin < 0) || (pin > 128))
       return wiringPiFailure (WPI_FATAL, "wiringPiISR: pin must be 0-128 (%d)\n", pin) ;
   }
-  else if ( piModel == PI_MODEL_ODROIDXU_34 )   {
+  else if ( piModel == PI_MODEL_ODROIDXU_34 || piModel == PI_MODEL_ODROIDC2 )   {
     if ((pin < 0) || (pin > 256))
       return wiringPiFailure (WPI_FATAL, "wiringPiISR: pin must be 0-256 (%d)\n", pin) ;
   }
@@ -2379,8 +2668,13 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 // Now pre-open the /sys/class node - but it may already be open if
 //	we are in Sys mode...
 
-  if      ( piModel == PI_MODEL_ODROIDC )  {
-    int fd_base = bcmGpioPin < GPIO_PIN_BASE ? 0 : bcmGpioPin - GPIO_PIN_BASE;
+  if      ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 )  {
+    int fd_base = 0;
+
+    if (piModel == PI_MODEL_ODROIDC2 )
+	fd_base = bcmGpioPin < C2_GPIOY_PIN_START ? 63: bcmGpioPin - C2_GPIOY_PIN_START;
+    else
+	fd_base = bcmGpioPin < GPIO_PIN_BASE      ? 0 : bcmGpioPin - GPIO_PIN_BASE;
 
     if (sysFds [fd_base] == -1)
     {
@@ -2640,6 +2934,35 @@ int wiringPiSetup (void)
         else                                        piThreadIrqMode = FALSE;
     }
   }
+  else if ( model == PI_MODEL_ODROIDC2 )	{
+
+    if(rev == PI_VERSION_1) {
+	 pinToGpio =  pinToGpioOdroidC2_Rev1_0;
+	physToGpio = physToGpioOdroidC2_Rev1_0;
+    }
+    else {
+	 pinToGpio =  pinToGpioOdroidC2_Rev1_1;
+	physToGpio = physToGpioOdroidC2_Rev1_1;
+    }
+
+  // GPIO:
+    gpio = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, ODROIDC2_GPIO_BASE) ;
+    if ((int32_t)gpio == -1)
+      return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (GPIO) failed: %s\n", strerror (errno)) ;
+
+  // ADC
+  // ADC sysfs open (/sys/class/saradc/saradc_ch0, ch1)
+    adcFds [0] = open (C2_piAinNode0, O_RDONLY) ;
+    adcFds [1] = open (C2_piAinNode1, O_RDONLY) ;
+
+    // Check aml_gpio directory for gpio irq
+    {
+        struct stat s;
+
+        if(-1 == stat("/sys/class/aml_gpio", &s))   piThreadIrqMode = TRUE;
+        else                                        piThreadIrqMode = FALSE;
+    }
+  }
   else if ( model == PI_MODEL_ODROIDXU_34 ) {
      pinToGpio =  pinToGpioOdroidXU;
     physToGpio = physToGpioOdroidXU;
@@ -2838,6 +3161,42 @@ int wiringPiSetupSys (void)
     adcFds [0] = open (piAinNode0, O_RDONLY) ;
     adcFds [1] = open (piAinNode1, O_RDONLY) ;
   }
+  else if ( model == PI_MODEL_ODROIDC2 )	{
+    if(rev == PI_VERSION_1) {
+	 pinToGpio =  pinToGpioOdroidC2_Rev1_0;
+	physToGpio = physToGpioOdroidC2_Rev1_0;
+    }
+    else {
+	 pinToGpio =  pinToGpioOdroidC2_Rev1_1;
+	physToGpio = physToGpioOdroidC2_Rev1_1;
+    }
+
+// Open and scan the directory, looking for exported GPIOs, and pre-open
+//	the 'value' interface to speed things up for later
+
+    // Check aml_gpio directory for gpio irq
+    {
+        struct stat s;
+
+        if(-1 == stat("/sys/class/aml_gpio", &s))   piThreadIrqMode = TRUE;
+        else                                        piThreadIrqMode = FALSE;
+    }
+
+    for (pin = C2_GPIOY_PIN_START ; pin < C2_GPIOY_PIN_START + 64 ; ++pin)
+    {
+      if(piThreadIrqMode)
+          sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
+      else
+          sprintf (fName, "/sys/class/aml_gpio/gpio%d/value", pin) ;
+
+      sysFds [pin - C2_GPIOY_PIN_START] = open (fName, O_RDWR) ;
+    }
+
+  // ADC sysfs open (/sys/class/saradc/saradc_ch0, ch1)
+
+    adcFds [0] = open (C2_piAinNode0, O_RDONLY) ;
+    adcFds [1] = open (C2_piAinNode1, O_RDONLY) ;
+  }
   else if ( model == PI_MODEL_ODROIDXU_34 ) {
      pinToGpio =  pinToGpioOdroidXU ;
     physToGpio = physToGpioOdroidXU ;
@@ -2856,8 +3215,8 @@ int wiringPiSetupSys (void)
   // ADC
   // ADC Fds[0] = ("/sys/devices/12d10000.adc/iio:device0/in_voltage0_raw")
   // ADC Fds[1] = ("/sys/devices/12d10000.adc/iio:device0/in_voltage3_raw")
-    adcFds [0] = open (piAinNode0, O_RDONLY) ;
-    adcFds [1] = open (piAinNode1, O_RDONLY) ;
+    adcFds [0] = open (piAinNode0_xu, O_RDONLY) ;
+    adcFds [1] = open (piAinNode1_xu, O_RDONLY) ;
   }
   else  {
     boardRev = piBoardRev () ;
