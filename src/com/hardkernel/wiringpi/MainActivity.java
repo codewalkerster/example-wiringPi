@@ -45,25 +45,25 @@ public class MainActivity extends Activity {
     private final int PORT_ADC1 = 0;   // ADC.AIN0
     private ProgressBar mPB_ADC;
     private final int ledPorts[] = {
-        97,  // GPIOX.BIT0(#97)
-        108, // GPIOX.BIT11(#108)
-        100, // GPIOX.BIT3(#100)
-        101, // GPIOX.BIT4(#101)
-        105, // GPIOX.BIT8(#105)
-        106, // GPIOX.BIT9(#106)
-        107, // GPIOX.BIT10(#107)
-        115, // GPIOX.BIT18(#115)
-        116, // GPIOX.BIT19(#116)
-        88,  // GPIOY.BIT8(#88)
-        83,  // GPIOY.BIT3(#83)
-        87,  // GPIOY.BIT7(#87)
-        104, // GPIOX.BIT7(#104)
-        102, // GPIOX.BIT5(#102)
-        103, // GPIOX.BIT6(#103)
-        117, // GPIOX.BIT20(#117)
-        99,  // GPIOX.BIT2(#99)
-        118, // GPIOX.BIT21(#118)
-        98,  // GPIOX.BIT1(#98)
+        228, // GPIOX.0
+        239, // GPIOX.11
+        231, // GPIOX.3
+        232, // GPIOX.4
+        236, // GPIOX.8
+        237, // GPIOX.9
+        238, // GPIOX.10
+        246, // GPIOX.18
+        247, // GPIOX.19
+        219, // GPIOY.8
+        214, // GPIOY.3
+        218, // GPIOY.7
+        235, // GPIOX.7
+        233, // GPIOX.5
+        234, // GPIOX.6
+        248, // GPIOX.29
+        230, // GPIOX.2
+        249, // GPIOX.21
+        229, // GPIOX.1
     };
 
     private static final int[] CHECKBOX_IDS = {
@@ -682,9 +682,10 @@ public class MainActivity extends Activity {
     //GPIO {{{
     public void updateGPIO() {
         int i = 0;
-        int adcValue = 0;
         int ledPos = 0;
-        if ((adcValue = analogRead (PORT_ADC1)) > 0) {
+        int adcValue = analogRead(PORT_ADC1);
+        //Log.e(TAG, "updateGPIO adcValue = " + adcValue);
+        if (adcValue > 0) {
             ledPos = (adcValue * ledPorts.length * 1000) / 1024;
             ledPos = (ledPorts.length - (ledPos / 1000));
             mPB_ADC.setProgress(adcValue);
