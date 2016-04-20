@@ -45,25 +45,25 @@ public class MainActivity extends Activity {
     private final int PORT_ADC1 = 0;   // ADC.AIN0
     private ProgressBar mPB_ADC;
     private final int ledPorts[] = {
-        228, // GPIOX.0
-        239, // GPIOX.11
-        231, // GPIOX.3
-        232, // GPIOX.4
-        236, // GPIOX.8
-        237, // GPIOX.9
-        238, // GPIOX.10
-        246, // GPIOX.18
-        247, // GPIOX.19
-        219, // GPIOY.8
         214, // GPIOY.3
-        218, // GPIOY.7
-        235, // GPIOX.7
-        233, // GPIOX.5
         234, // GPIOX.6
-        248, // GPIOX.29
+        219, // GPIOY.8
+        228, // GPIOX.0
         230, // GPIOX.2
+        232, // GPIOX.4
+        235, // GPIOX.7
+        237, // GPIOX.9
+        239, // GPIOX.11
+        247, // GPIOX.9
         249, // GPIOX.21
+        238, // GPIOX.10
+        236, // GPIOX.8
+        233, // GPIOX.5
+        231, // GPIOX.3
         229, // GPIOX.1
+        224, // GPIOY.13
+        225, // GPIOY.14
+        218, // GPIOX.1
     };
 
     private static final int[] CHECKBOX_IDS = {
