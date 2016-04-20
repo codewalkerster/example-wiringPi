@@ -625,6 +625,9 @@ public class MainActivity extends Activity {
                     insmod1Wire();
                     mIDs = new ArrayList<String>();
                     getDS1820ID(mIDs);
+                    if (mIDs.size() == 0)
+                        return;
+
                     mBtn_DS1820_1.setText(mBtn_DS1820_1.getText() + "(" +
                             mIDs.get(0) + ")");
                     if (mIDs.size() > 1) {
@@ -644,6 +647,9 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 // TODO Auto-generated method stub
+                if (mIDs.size() == 0)
+                    return;
+
                 mET_DS1820_Info_1.setText(getDS1820Info(mIDs.get(0)));
             }
         });
