@@ -196,7 +196,7 @@ public class MainActivity extends Activity {
             // TODO Auto-generated method stub
 
             try {
-                BufferedReader br = new BufferedReader(new FileReader(TTYS2));
+                BufferedReader br = new BufferedReader(new FileReader(TTYSx));
                 while (!mStopSerial) {
                     while((mLine = br.readLine()) != null) {
                         Log.e(TAG, mLine);
@@ -209,7 +209,7 @@ public class MainActivity extends Activity {
             }
         }
     };
-    private final static String TTYS2 = "/dev/ttyS2";
+    private final static String TTYSx = "/dev/ttyS1";
     private Handler mHandler = new Handler() {
 
         @Override
@@ -1044,7 +1044,7 @@ public class MainActivity extends Activity {
     private void setBaudRate() {
         try {
             DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
-            os.writeBytes("stty -F /dev/ttyS2 1152200\n");
+            os.writeBytes("stty -F /dev/ttyS1 115200\n");
             os.flush();
             Thread.sleep(100);
         } catch (IOException e1) {
@@ -1058,7 +1058,7 @@ public class MainActivity extends Activity {
 
     private void writeSerial(String data) {
         try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(TTYS2));
+            BufferedWriter bw = new BufferedWriter(new FileWriter(TTYSx));
             bw.write(data);
             bw.close();
         } catch (IOException e) {
