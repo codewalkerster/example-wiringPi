@@ -96,6 +96,5 @@ jint Java_com_hardkernel_wiringpi_MainActivity_getHumidity(JNIEnv* env, jobject 
 jint Java_com_hardkernel_wiringpi_MainActivity_getAltitude(JNIEnv* env, jobject obj) {
     int result = 0;
     bme280_readAltitude(pressure, &SEALEVELPRESSURE_HPA, &result);
-    LOGI("altitude = %d", result);
     return result;
 }
