@@ -68,7 +68,11 @@ LOCAL_C_INCLUDES += \
     $(LOCAL_PATH)/devLib/
 
 LOCAL_MODULE    := wpi_android
-LOCAL_SRC_FILES := wpi_android.c
+LOCAL_SRC_FILES := \
+    wpi_android.c \
+    bme280-i2c.c \
+    bme280.c \
+    si1132.c
 LOCAL_LDLIBS    := -ldl -llog
 LOCAL_SHARED_LIBRARIES := libwiringPi libwiringPiDev
 include $(BUILD_SHARED_LIBRARY)

@@ -108,78 +108,35 @@ public class MainActivity extends Activity {
     //PWM }}}
 
     //I2C {{{
-    //BMP085 {{{
-    private boolean mStopBMP085;
-    private ToggleButton mBtn_BMP085;
+    private boolean mStopWeather;
+    private ToggleButton mBtn_Weather;
+    //BME280 {{{
     private TextView mTV_Temperature;
+    private TextView mTV_Humidity;
     private TextView mTV_Pressure;
+    private TextView mTV_Altitude;
     private String mTemperature;
+    private String mHumidity;
     private String mPressure;
-    Runnable mRunnableBMP085 = new Runnable() {
+    private String mAltitude;
+    Runnable mRunnableWeather = new Runnable() {
 
         @Override
         public void run() {
             // TODO Auto-generated method stub
-            updateBMP085();
+            updateWeather();
         }
     };
-    private final static String TEMP_INPUT = "/sys/bus/i2c/drivers/bmp085/1-0077/temp0_input";
-    private final static String PRESSURE_INPUT = "/sys/bus/i2c/drivers/bmp085/1-0077/pressure0_input";
-    //BMP085 }}}
+    //BME280 }}}
 
     //SI1132 {{{
-    private boolean mStopSI1132;
-    private ToggleButton mBtn_SI1132;
+    private TextView mTV_UV_index;
     private TextView mTV_Visible;
-    private TextView mTV_LUX;
-    private TextView mTV_UV;
-    private String mVisibleLux;
-    private String mLux;
-    private String mUV;
-    Runnable mRunnableSI1132 = new Runnable() {
-
-        @Override
-        public void run() {
-            // TODO Auto-generated method stub
-            updateSI1132();
-        }
-    };
-    private final static String VISIBLE_INDEX = "/sys/devices/i2c-1/1-0060/visible_index";
-    private final static String IR_INDEX = "/sys/devices/i2c-1/1-0060/ir_index";
-    private final static String UV_INDEX = "/sys/devices/i2c-1/1-0060/uv_index";
+    private TextView mTV_IR;
+    private String mUVindex;
+    private String mVisible;
+    private String mIR;
     //SI1132 }}}
-
-    //SI702x {{{
-    private boolean mStopSI702x;
-    private ToggleButton mBtn_SI702x;
-    private TextView mTV_Temperature2;
-    private TextView mTV_Humidity;
-    private String mTemperature2;
-    private String mHumidity;
-    Runnable mRunnableSI702x = new Runnable() {
-
-        @Override
-        public void run() {
-            // TODO Auto-generated method stub
-            updateSI702x();
-        }
-    };
-    private final static String TEMPERATURE = "/sys/bus/i2c/drivers/si702x/1-0040/temperature";
-    private final static String HUMIDITY = "/sys/bus/i2c/drivers/si702x/1-0040/humidity";
-    //SI702x }}}
-
-    private int mLCDHandle = -1;
-    private final static int LCD_ROW = 2;   // 16 Char
-    private final static int LCD_COL = 16;  // 2 Line
-    private final static int LCD_BUS = 4;   // Interface 4 Bit mode
-    private final static int LCD_UPDATE_PERIOD = 300; // 300ms
-
-    private final static int PORT_LCD_RS = 7;   // GPIOY.BIT3(#83)
-    private final static int PORT_LCD_E = 0;   // GPIOY.BIT8(#88)
-    private final static int PORT_LCD_D4 = 2;   // GPIOX.BIT19(#116)
-    private final static int PORT_LCD_D5 = 3;   // GPIOX.BIT18(#115)
-    private final static int PORT_LCD_D6 = 1;   // GPIOY.BIT7(#87)
-    private final static int PORT_LCD_D7 = 4;   // GPIOX.BIT7(#104)
     //I2C }}}
 
     //UART {{{
@@ -269,9 +226,7 @@ public class MainActivity extends Activity {
             public void onTabChanged(String tabId) {
                 // TODO Auto-generated method stub
                 mBtn_PWM.setChecked(false);
-                mBtn_BMP085.setChecked(false);
-                mBtn_SI1132.setChecked(false);
-                mBtn_SI702x.setChecked(false);
+                mBtn_Weather.setChecked(false);
                 mBtn_GPIO.setChecked(false);
                 mBtn_ReadSerial.setChecked(false);
                 mBtn_1Wire.setChecked(false);
@@ -474,89 +429,37 @@ public class MainActivity extends Activity {
         //PWM }}}
 
         //I2C {{{
-        //BMP085 {{{
-        mBtn_BMP085 = (ToggleButton) findViewById(R.id.btn_bmp085);
-        mBtn_BMP085.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        //BME280 {{{
+        mBtn_Weather = (ToggleButton) findViewById(R.id.tb_weather);
+        mBtn_Weather.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 // TODO Auto-generated method stub
                 if (isChecked) {
-                    /*
-                    wiringPiSetupSys();
-                    mLCDHandle = lcdInit(LCD_ROW, LCD_COL, LCD_BUS,
-                            PORT_LCD_RS, PORT_LCD_E, PORT_LCD_D4, PORT_LCD_D5, 
-                            PORT_LCD_D6, PORT_LCD_D7, 0, 0, 0, 0);
-                    Log.e(TAG, "mLCDHandler = " + mLCDHandle);
-                    if (mLCDHandle < 0)
-                        finish();
-                    */
-                    mBtn_SI1132.setChecked(false);
-                    mBtn_SI702x.setChecked(false);
-                    insmodBMP085();
-                    mStopBMP085 = false;
-                    handler.postDelayed(mRunnableBMP085, 300);
+                    if (openWeatherBoard() == -1) {
+                        Log.e(TAG, "filed");
+                        return;
+                    }
+                    mStopWeather = false;
+                    handler.postDelayed(mRunnableWeather, 300);
                 } else {
-                    mLCDHandle = -1;
-                    mStopBMP085 = true;
-                    rmmodBMP085();
+                    mStopWeather = true;
+                    closeWeatherBoard();
                 }
             }
         });
 
         mTV_Temperature = (TextView) findViewById(R.id.tv_temperature);
+        mTV_Humidity = (TextView) findViewById(R.id.tv_humidity);
         mTV_Pressure = (TextView) findViewById(R.id.tv_pressure);
-        //BMP085 }}}
+        mTV_Altitude = (TextView) findViewById(R.id.tv_altitude);
+        //BME280 }}}
 
         //SI1173 {{{
-        mBtn_SI1132 = (ToggleButton) findViewById(R.id.btn_si1132);
-        mBtn_SI1132.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                // TODO Auto-generated method stub
-                if (isChecked) {
-                    mBtn_BMP085.setChecked(false);
-                    mBtn_SI702x.setChecked(false);
-                    insmodSI1132();
-                    mStopSI1132 = false;
-                    handler.postDelayed(mRunnableSI1132, 300);
-                } else {
-                    mLCDHandle = -1;
-                    mStopSI1132 = true;
-                    rmmodSI1132();
-                }
-            }
-        });
-
-        mTV_Visible = (TextView) findViewById(R.id.tv_visible_index);
-        mTV_LUX = (TextView) findViewById(R.id.tv_lux);
-        mTV_UV = (TextView) findViewById(R.id.tv_uv);
-        //SI1132 }}}
-
-        //SI702x {{{
-        mBtn_SI702x = (ToggleButton) findViewById(R.id.btn_si702x);
-        mBtn_SI702x.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                // TODO Auto-generated method stub
-                if (isChecked) {
-                    mBtn_BMP085.setChecked(false);
-                    mBtn_SI1132.setChecked(false);
-                    insmodSI702x();
-                    mStopSI702x = false;
-                    handler.postDelayed(mRunnableSI702x, 300);
-                } else {
-                    mLCDHandle = -1;
-                    mStopSI702x = true;
-                    rmmodSI702x();
-                }
-            }
-        });
-
-        mTV_Temperature2 = (TextView) findViewById(R.id.tv_temperature2);
-        mTV_Humidity = (TextView) findViewById(R.id.tv_humidity);
+        mTV_UV_index = (TextView) findViewById(R.id.tv_uv_index);
+        mTV_Visible = (TextView) findViewById(R.id.tv_visible);
+        mTV_IR = (TextView) findViewById(R.id.tv_ir);
         //SI1132 }}}
         //I2C }}}
 
@@ -686,9 +589,7 @@ public class MainActivity extends Activity {
         mBtn_PWM.setChecked(false);
         //PWM }}}
         //I2C {{{
-        mBtn_BMP085.setChecked(false);
-        mBtn_SI1132.setChecked(false);
-        mBtn_SI702x.setChecked(false);
+        mBtn_Weather.setChecked(false);
         //I2C }}}
         //UARD {{{
         mBtn_ReadSerial.setChecked(false);
@@ -824,226 +725,27 @@ public class MainActivity extends Activity {
     //PWM }}}
 
     //I2C {{{
-    //BMP085 {{{
-    private void insmodBMP085() {
-        try {
-            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
-            os.writeBytes("insmod /system/lib/modules/i2c-algo-bit.ko\n");
-            os.writeBytes("insmod /system/lib/modules/aml_i2c.ko\n");
-            os.writeBytes("insmod /system/lib/modules/bmp085-i2c.ko\n");
-            os.flush();
-            Thread.sleep(100);
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+    private void updateWeather() {
+        if (mStopWeather == true)
+            return;
+        mTV_UV_index.setText("UV index : "
+                + String.format("%.2f", (double)getUVindex() / 100.0));
+        mTV_Visible.setText("Visible : "
+                + String.format("%.0f", (double)getVisible()) + " Lux");
+        mTV_IR.setText("IR : "
+                + String.format("%.0f", (double)getIR()) + " Lux");
+        readyData();
+        mTV_Temperature.setText("Temperature : "
+                + String.format("%.2f", getTemperature() / 100.0) + " °C");
+        mTV_Humidity.setText("Humidity : "
+                + String.format("%.2f", getHumidity() / 1024.0) + " %");
+        mTV_Pressure.setText("Pressure : "
+                + String.format("%.2f", getPressure() / 100.0) + " hPa");
+        mTV_Altitude.setText("Altitude : " + getAltitude() + " m");
+
+        if (!mStopWeather)
+            handler.postDelayed(mRunnableWeather, 1000);
     }
-
-    private void rmmodBMP085() {
-        try {
-            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
-            os.writeBytes("rmmod bmp085_i2c\n");
-            os.writeBytes("rmmod aml_i2c\n");
-            os.flush();
-            Thread.sleep(100);
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
-    public void updateBMP085() {
-        try {
-            BufferedReader temp_reader = 
-                new BufferedReader(new FileReader(TEMP_INPUT));
-
-            String txt = "";
-
-            while((txt = temp_reader.readLine()) != null) {
-                float temp = Float.parseFloat(txt) / 10;
-                mTemperature = String.format("%.1f", temp);
-                mTemperature += " *C";
-                mTV_Temperature.setText(mTemperature);
-            }
-
-            temp_reader.close();
-
-            BufferedReader pressure_reader =
-                new BufferedReader(new FileReader(PRESSURE_INPUT));
-
-            while((txt = pressure_reader.readLine()) != null) {
-                float temp = Float.parseFloat(txt) / 100;
-                mPressure = String.format("%.2f", temp);
-                mPressure += " hPa";
-                mTV_Pressure.setText(mPressure);
-            }
- 
-            pressure_reader.close();
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-
-        if (!mStopBMP085)
-            handler.postDelayed(mRunnableBMP085, 100);
-    }
-    //BMP085 }}}
-
-    //SI1132 {{{
-    private void insmodSI1132() {
-        try {
-            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
-            os.writeBytes("insmod /system/lib/modules/i2c-algo-bit.ko\n");
-            os.writeBytes("insmod /system/lib/modules/aml_i2c.ko\n");
-            os.writeBytes("insmod /system/lib/modules/si1132.ko\n");
-            os.flush();
-            Thread.sleep(100);
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
-    private void rmmodSI1132() {
-        try {
-            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
-            os.writeBytes("rmmod si1132\n");
-            os.writeBytes("rmmod aml_i2c\n");
-            os.flush();
-            Thread.sleep(100);
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
-    public void updateSI1132() {
-        try {
-            BufferedReader visible_index_reader =
-                new BufferedReader(new FileReader(VISIBLE_INDEX));
-
-            String txt = "";
-
-            while((txt = visible_index_reader.readLine()) != null) {
-                mVisibleLux = txt;
-                mVisibleLux += " Lux(Visible index)";
-                mTV_Visible.setText(mVisibleLux);
-            }
-
-            visible_index_reader.close();
-
-            BufferedReader ir_reader =
-                new BufferedReader(new FileReader(IR_INDEX));
-
-            while((txt = ir_reader.readLine()) != null) {
-                mLux = txt;
-                mLux += " Lux";
-                mTV_LUX.setText(mLux);
-            }
-
-            ir_reader.close();
-
-            BufferedReader uv_reader =
-                new BufferedReader(new FileReader(UV_INDEX));
-
-            while((txt = uv_reader.readLine()) != null) {
-                float temp = Float.parseFloat(txt) / 100;
-                mUV = String.format("%.1f", temp);
-                mUV += " index";
-                mTV_UV.setText(mUV);
-            }
-
-            uv_reader.close();
-
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-
-        if (!mStopSI1132)
-            handler.postDelayed(mRunnableSI1132, 100);
-    }
-    //SI1132 }}}
-
-    //SI702x {{{
-    private void insmodSI702x() {
-        try {
-            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
-            os.writeBytes("insmod /system/lib/modules/i2c-algo-bit.ko\n");
-            os.writeBytes("insmod /system/lib/modules/aml_i2c.ko\n");
-            os.writeBytes("insmod /system/lib/modules/si702x.ko\n");
-            os.flush();
-            Thread.sleep(100);
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
-    private void rmmodSI702x() {
-        try {
-            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
-            os.writeBytes("rmmod si702x\n");
-            os.writeBytes("rmmod aml_i2c\n");
-            os.flush();
-            Thread.sleep(100);
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
-    public void updateSI702x() {
-        try {
-            BufferedReader temperature_reader =
-                new BufferedReader(new FileReader(TEMPERATURE));
-
-            String txt = "";
-
-            while((txt = temperature_reader.readLine()) != null) {
-                float temp = Float.parseFloat(txt);
-                mTemperature2 = String.format("%.1f", temp);
-                mTemperature2 += " *C";
-                mTV_Temperature2.setText(mTemperature2);
-            }
-
-            temperature_reader.close();
-
-            BufferedReader humidity_reader =
-                new BufferedReader(new FileReader(HUMIDITY));
-
-            while((txt = humidity_reader.readLine()) != null) {
-                float temp = Float.parseFloat(txt);
-                mHumidity = String.format("%.2f", temp);
-                mHumidity += " %";
-                mTV_Humidity.setText(mHumidity);
-            }
-
-            humidity_reader.close();
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-
-        if (!mStopSI702x)
-            handler.postDelayed(mRunnableSI702x, 100);
-    }
-    //SI702x }}}
     //I2C }}}
 
     //UART {{{
@@ -1140,38 +842,19 @@ public class MainActivity extends Activity {
     }
     //1-Wire
 
-    private void updateLCDDisplay() {
-        if (mLCDHandle == -1)
-            return;
-
-        // first line
-        lcdPosition(mLCDHandle, 0, 0);
-        for (int i = 0; i < LCD_COL ; i++) {
-            if ( i < mTemperature.length() - 1)
-                lcdPutchar(mLCDHandle, mTemperature.charAt(i));
-            else
-                lcdPutchar(mLCDHandle, ' ');
-        }
-
-        // second line
-        lcdPosition(mLCDHandle, 0, 1);
-        for (int i = 0; i < LCD_COL; i++) {
-            if (i < mPressure.length() - 1)
-                lcdPutchar(mLCDHandle, mPressure.charAt(i));
-            else
-                lcdPutchar(mLCDHandle, ' ');
-        }
-    }
-
     public native int wiringPiSetupSys();
     public native int analogRead(int port);
     public native void digitalWrite(int port, int onoff);
-    public native int lcdInit(int rows, int cols, int bits,
-            int rs, int strb, 
-            int d0, int d1, int d2, int d3, int d4,
-            int d5, int d6, int d7);
-    public native void lcdPosition(int fd, int x, int y);
-    public native void lcdPutchar(int fd, char c);
+    public native int openWeatherBoard();
+    public native int closeWeatherBoard();
+    public native void readyData();
+    public native int getUVindex();
+    public native float getVisible();
+    public native float getIR();
+    public native int getTemperature();
+    public native int getPressure();
+    public native int getHumidity();
+    public native int getAltitude();
 
     static {
         System.loadLibrary("wpi_android");

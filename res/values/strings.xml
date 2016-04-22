@@ -13,26 +13,26 @@
     <string name="enable_PWM2">Enable PWM 2</string>
     <string name="Temperature">Temperature</string>
     <string name="Pressure">Pressure</string>
-    <string name="Visible_index">Visible index</string>
-    <string name="Lux">Lux</string>
-    <string name="UV">UV</string>
+    <string name="UV_index">UV index</string>
+    <string name="visible">Visible</string>
+    <string name="IR">IR</string>
     <string name="Humidity">Humidity</string>
     <string name="Write">send string to UART port.</string>
     <string name="Read">read UART port.</string>
     <string name="celcius">°C</string>
-    <string name="BMP085">BMP085</string>
+    <string name="BME280">BME280</string>
     <string name="SI1132">SI1132</string>
-    <string name="SI720x">SI720x</string>
     <string name="DS1820_ID">DS1820</string>
-    <string name="Tinkering_Kit">Introduction C Tinkering Kit</string>
+    <string name="Tinkering_Kit">Introduction C2 Tinkering Kit</string>
     <string name="Tinkering_Kit_link">http://odroid.com/dokuwiki/doku.php?id=en:c_tinkering</string>
     <string name="Hardware_PWM">Hardware PWM</string>
-    <string name="Hardware_PWM_link">http://odroid.com/dokuwiki/doku.php?id=en:c1_hardware_pwm</string>
+    <string name="Hardware_PWM_link">http://odroid.com/dokuwiki/doku.php?id=en:c2_hardware_pwm</string>
     <string name="Weather_Board">Use to Weather-Board</string>
-    <string name="Weather_Board_link">http://odroid.com/dokuwiki/doku.php?id=en:c1_wb_16x2lcd</string>
+    <string name="Weather_Board_link">http://odroid.com/dokuwiki/doku.php?id=en:c_hardware_i2c</string>
     <string name="Dallas_1Wire">Dallas 1-Wire Support</string>
-    <string name="Dallas_1Wire_link">http://odroid.com/dokuwiki/doku.php?id=en:c1_hardware_1w</string>
-    <string name="uart_interface">UART interface using the C1 Tinkering Kit</string>
-    <string name="uart_interface_link">http://odroid.com/dokuwiki/doku.php?id=en:c1_hardware_uart</string>
+    <string name="Dallas_1Wire_link">http://odroid.com/dokuwiki/doku.php?id=en:c2_hardware_1w</string>
+    <string name="uart_interface">UART interface using the C2 Tinkering Kit</string>
+    <string name="uart_interface_link">http://odroid.com/dokuwiki/doku.php?id=en:c2_hardware_uart</string>
+    <string name="altitude">Altitude</string>
 
 </resources>
