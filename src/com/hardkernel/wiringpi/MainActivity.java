@@ -44,6 +44,11 @@ public class MainActivity extends Activity {
     private final int DATA_UPDATE_PERIOD = 100; // 100ms
     private final int PORT_ADC1 = 0;   // ADC.AIN0
     private ProgressBar mPB_ADC;
+
+    private final static int INPUT = 0;
+    private final static int OUTPUT = 1;
+
+	/*
     private final int ledPorts[] = {
         214, // GPIOY.3
         234, // GPIOX.6
@@ -65,6 +70,30 @@ public class MainActivity extends Activity {
         225, // GPIOY.14
         218, // GPIOX.1
     };
+	*/
+
+    private final int ledPorts[] = {
+        24, //214
+        23, //234
+        22, //219
+        21, //228
+        14, //230
+        13, //232
+        12, //235
+        3,  //237
+        2,  //239
+        0,  //247
+        7,  //249
+        5,  //238
+        4,  //236
+        5,  //233
+        6,  //231
+        10, //229
+        26, //224
+        11, //225
+        27, //218
+    };
+
 
     private static final int[] CHECKBOX_IDS = {
         R.id.led01, R.id.led02, R.id.led03, R.id.led04, R.id.led05,
@@ -242,9 +271,9 @@ public class MainActivity extends Activity {
                 // TODO Auto-generated method stub
                 if (isChecked) {
 
-                    exportGPIO();
-
                     wiringPiSetupSys();
+
+                    exportGPIO();
 
                     mStopGPIO = false;
                     handler.postDelayed(mRunnableGPIO, 100);
@@ -628,6 +657,7 @@ public class MainActivity extends Activity {
     }
 
     boolean exportGPIO() {
+        /*
         try {
             DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
             for (int port: ledPorts) {
@@ -647,10 +677,15 @@ public class MainActivity extends Activity {
             e.printStackTrace();
         }
 
+        */
+        for (int i = 0; i < ledPorts.length; i++)
+            pinMode(ledPorts[i], OUTPUT);
+
         return true;
     }
 
     boolean unexportGPIO() {
+        /*
         try {
             DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
             for (int port : ledPorts) {
@@ -662,6 +697,7 @@ public class MainActivity extends Activity {
             e1.printStackTrace();
             return false;
         }
+        */
 
         return true;
     }
@@ -845,6 +881,7 @@ public class MainActivity extends Activity {
     public native int wiringPiSetupSys();
     public native int analogRead(int port);
     public native void digitalWrite(int port, int onoff);
+    public native void pinMode(int port, int value);
     public native int openWeatherBoard();
     public native int closeWeatherBoard();
     public native void readyData();

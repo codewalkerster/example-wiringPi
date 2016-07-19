@@ -79,6 +79,9 @@
 #define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define LOG_TAG "wiringPi-android"
 #define printf	LOGI
+typedef unsigned long __mmap_t;
+#else
+typedef uint32_t __mmap_t;
 #endif
 
 #ifndef	TRUE
@@ -193,10 +196,10 @@ struct wiringPiNodeStruct *wiringPiNodes = NULL ;
 
 // Locals to hold pointers to the hardware
 
-static volatile uint32_t *gpio, *gpio1;
-static volatile uint32_t *pwm ;
-static volatile uint32_t *clk ;
-static volatile uint32_t *pads ;
+static volatile __mmap_t *gpio, *gpio1;
+static volatile __mmap_t *pwm ;
+static volatile __mmap_t *clk ;
+static volatile __mmap_t *pads ;
 
 #ifdef	USE_TIMER
 static volatile uint32_t *timer ;
@@ -635,6 +638,23 @@ static int adcFds [2] = {
 
 #define C2_piAinNode0   "/sys/class/saradc/ch0"
 #define C2_piAinNode1   "/sys/class/saradc/ch1"
+
+//#define ODROID_IOCTL
+
+#if defined(ODROID_IOCTL)
+static int ioctl_fd = -1;
+
+struct gpioctrl_iocreg {
+    __u32 reg_offset;
+    __u32 reg_data;
+    __u32 bit_mask;
+    __u32 bit_data;
+};
+
+#define GPIOCTRL_IOCGREG	_IOR('g', 1, struct gpioctrl_iocreg )
+#define GPIOCTRL_IOCWREG	_IOW('g', 2, struct gpioctrl_iocreg )
+
+#endif
 
 //
 // For ODROID-XU3/4 Board
@@ -1174,6 +1194,10 @@ int wiringPiFailure (int fatal, const char *message, ...)
   va_end (argp) ;
 
   fprintf (stderr, "%s", buffer) ;
+
+#ifdef ANDROID
+  LOGI("%s", buffer);
+#endif
   exit (EXIT_FAILURE) ;
 
   return 0 ;
@@ -1247,7 +1271,7 @@ void wiringPiGpioCheck (const char *call_func, int origPin, int pin)
  *  added :
  *  0100 - Model ODROID XU3/4, Rev 1.0, 2048M, Hardkernel
  *  added :
- *  020b - Model ODROID C2, 2048M, Hardkernel
+ *  02xx - Model ODROID C2, 2048M, Hardkernel
  *         Rev 1.0 : /sys/class/odroid/boardrev value is 0 (Dev board)
  *         Rev 1.1 : /sys/class/odroid/boardrev value is 1 (Mass board)
  *
@@ -1337,7 +1361,7 @@ int piBoardRev (void)
   else
     boardRev = 2;
 
-  if (strcmp (c, "020b") == 0) {
+  if (strncmp (c, "02", 2) == 0) {
 	int fd = 0;
 	char buf[2];
 
@@ -1437,7 +1461,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *overVolted)
   else if (strcmp (c, "0100") == 0) {
     *model = PI_MODEL_ODROIDXU_34;  *rev = PI_VERSION_1;  *mem = 2048;  *maker = PI_MAKER_HARDKERNEL;
   }
-  else if (strcmp (c, "020b") == 0)	{
+  else if (strncmp (c, "02", 2) == 0)	{
     *model = PI_MODEL_ODROIDC2; *mem = 2048;  *maker = PI_MAKER_HARDKERNEL;
     *rev = piBoardRev ();
   }
@@ -1866,6 +1890,7 @@ void pinMode (int pin, int mode)
   int origPin = pin ;
   unsigned int  gpio_mask = PI_GPIO_MASK;
 
+	LOGI("pin = %d, mode = %d", pin, mode);
   if ( piModel == PI_MODEL_ODROIDC  )      gpio_mask = ODROIDC_GPIO_MASK;
   if ( piModel == PI_MODEL_ODROIDC2 )      gpio_mask = ODROIDC2_GPIO_MASK;
   if ( piModel == PI_MODEL_ODROIDXU_34 )   gpio_mask = ODROIDXU_GPIO_MASK;
@@ -1888,8 +1913,17 @@ void pinMode (int pin, int mode)
     shift   = gpioToShift  [pin] ;
 
     if (mode == INPUT) {
-      if      ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 )
+      if      ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 ) {
+#if defined(ODROID_IOCTL)
+    struct gpioctrl_iocreg gpioctrl;
+    gpioctrl.reg_offset = gpioToGPFSELReg(pin);
+    gpioctrl.bit_mask = (1 << gpioToShiftReg(pin));
+    gpioctrl.bit_data = 1;
+    ioctl(ioctl_fd, GPIOCTRL_IOCWREG, (void*)&gpioctrl);
+#else
         *(gpio + gpioToGPFSELReg(pin)) = (*(gpio + gpioToGPFSELReg(pin)) |  (1 << gpioToShiftReg(pin)));
+#endif
+      }
       else if ( piModel == PI_MODEL_ODROIDXU_34 )   {
         shift = (gpioToShiftReg(pin) * 4);
         if(pin < 100)
@@ -1901,8 +1935,18 @@ void pinMode (int pin, int mode)
         *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)); // Sets bits to zero = input
     }
     else if (mode == OUTPUT)  {
-      if      ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 )
+      if      ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 ) {
+#if defined(ODROID_IOCTL)
+    struct gpioctrl_iocreg gpioctrl;
+    gpioctrl.reg_offset = gpioToGPFSELReg(pin);
+    gpioctrl.bit_mask = (1 << gpioToShiftReg(pin));
+    gpioctrl.bit_data = 0;
+    LOGI("cmd = %d", GPIOCTRL_IOCWREG);
+    ioctl(ioctl_fd, GPIOCTRL_IOCWREG, &gpioctrl);
+#else
         *(gpio + gpioToGPFSELReg(pin)) = (*(gpio + gpioToGPFSELReg(pin)) & ~(1 << gpioToShiftReg(pin)));
+#endif
+      }
       else if ( piModel == PI_MODEL_ODROIDXU_34 )   {
         shift = (gpioToShiftReg(pin) * 4);
         if(pin < 100)   {
@@ -2020,6 +2064,27 @@ void pullUpDnControl (int pin, int pud)
 
     if( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 ) {
 
+#if defined(ODROID_IOCTL)
+    struct gpioctrl_iocreg gpioctrl;
+
+    gpioctrl.reg_offset = gpioToPUENReg(pin);
+    gpioctrl.bit_mask = (1 << gpioToShiftReg(pin));
+    if (pud) {
+        gpioctrl.bit_data = 1;
+        ioctl(ioctl_fd, GPIOCTRL_IOCWREG, &gpioctrl);
+
+        gpioctrl.reg_offset = gpioToPUPDReg(pin);
+        gpioctrl.bit_mask = (1 << gpioToShiftReg(pin));
+        if (pud == PUD_UP)
+            gpioctrl.bit_data = 1;
+        else
+            gpioctrl.bit_data = 0;
+        ioctl(ioctl_fd, GPIOCTRL_IOCWREG, &gpioctrl);
+    } else {
+        gpioctrl.bit_data = 0;
+        ioctl(ioctl_fd, GPIOCTRL_IOCWREG, &gpioctrl);
+    }
+#else
       if(pud) {
         // Enable Pull/Pull-down resister
         *(gpio + gpioToPUENReg(pin)) = (*(gpio + gpioToPUENReg(pin)) | (1 << gpioToShiftReg(pin)));
@@ -2031,6 +2096,7 @@ void pullUpDnControl (int pin, int pud)
       }
       else    // Disable Pull/Pull-down resister
         *(gpio + gpioToPUENReg(pin)) = (*(gpio + gpioToPUENReg(pin)) & ~(1 << gpioToShiftReg(pin)));
+#endif
     }
     else if ( piModel == PI_MODEL_ODROIDXU_34)  {
       int shift = 0;
@@ -2137,10 +2203,19 @@ int digitalRead (int pin)
     wiringPiGpioCheck (__func__, origPin, pin);
 
     if      ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 )  {
+#if defined(ODROID_IOCTL)
+    struct gpioctrl_iocreg gpioctrl;
+    gpioctrl.reg_offset = gpioToGPLEVReg(pin);
+    gpioctrl.bit_mask = (1 << gpioToShiftReg(pin));
+    ioctl(ioctl_fd, GPIOCTRL_IOCGREG, &gpioctrl);
+
+    return (gpioctrl.bit_data ? HIGH : LOW);
+#else
       if ((*(gpio + gpioToGPLEVReg(pin)) & (1 << gpioToShiftReg(pin))) != 0)
         return HIGH ;
       else
         return LOW ;
+#endif
     }
     else if ( piModel == PI_MODEL_ODROIDXU_34 ) {
       if (pin < 100)
@@ -2224,10 +2299,26 @@ void digitalWrite (int pin, int value)
     wiringPiGpioCheck (__func__, origPin, pin);
 
     if      ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 )  {
+#if defined(ODROID_IOCTL)
+    int res;
+    struct gpioctrl_iocreg gpioctrl;
+    gpioctrl.reg_offset = gpioToGPSETReg(pin);
+    gpioctrl.bit_mask = (1 << gpioToShiftReg(pin));
+
+    if (value == LOW)
+        gpioctrl.bit_data = 0;
+    else
+        gpioctrl.bit_data = 1;
+
+    res = ioctl(ioctl_fd, GPIOCTRL_IOCWREG, &gpioctrl);
+    if (res < 0)
+        LOGI("%s", strerror(errno));
+#else
       if (value == LOW)
         *(gpio + gpioToGPSETReg(pin)) &= ~(1 << gpioToShiftReg(pin));
       else
         *(gpio + gpioToGPSETReg(pin)) |=  (1 << gpioToShiftReg(pin));
+#endif
     }
     else if ( piModel == PI_MODEL_ODROIDXU_34 ) {
       if (pin < 100)    {
@@ -2906,9 +2997,19 @@ int wiringPiSetup (void)
   piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
 
 // Open the master /dev/memory device
-
-  if ((fd = open ("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC) ) < 0)
+#if defined(ODROID_IOCTL)
+  if ((model == PI_MODEL_ODROIDC) || (model == PI_MODEL_ODROIDC2)) {
+      if ((ioctl_fd = open ("/dev/gpioctrl", O_RDWR | O_SYNC | O_CLOEXEC) ) < 0) {
+        return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: Unable to open /dev/mem: %s\n", strerror (errno)) ;
+      }
+  } else {
+      if ((fd = open ("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC) ) < 0)
+        return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: Unable to open /dev/mem: %s\n", strerror (errno)) ;
+  }
+#else
+  if ((fd = open ("/dev/gpiomem", O_RDWR | O_SYNC | O_CLOEXEC) ) < 0)
     return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: Unable to open /dev/mem: %s\n", strerror (errno)) ;
+#endif
 
   if ( model == PI_MODEL_ODROIDC )  {
 
@@ -2917,8 +3018,8 @@ int wiringPiSetup (void)
 
   // GPIO:
 
-    gpio = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, ODROID_GPIO_BASE) ;
-    if ((int32_t)gpio == -1)
+    gpio = (__mmap_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, ODROID_GPIO_BASE) ;
+    if ((__mmap_t)gpio == -1)
       return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (GPIO) failed: %s\n", strerror (errno)) ;
 
   // ADC
@@ -2946,9 +3047,11 @@ int wiringPiSetup (void)
     }
 
   // GPIO:
-    gpio = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, ODROIDC2_GPIO_BASE) ;
-    if ((int32_t)gpio == -1)
-      return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (GPIO) failed: %s\n", strerror (errno)) ;
+#if !defined(ODROID_IOCTL)
+    gpio = (__mmap_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, ODROIDC2_GPIO_BASE);
+    if ((__mmap_t)gpio == -1)
+      return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (GPIO) failed: %s\n", strerror (errno));
+#endif
 
   // ADC
   // ADC sysfs open (/sys/class/saradc/saradc_ch0, ch1)
@@ -2969,13 +3072,13 @@ int wiringPiSetup (void)
 
   // GPIO:
   //#define ODROIDXU_GPX_BASE   0x13400000  // GPX0,1,2,3
-    gpio  = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, ODROIDXU_GPX_BASE) ;
-    if ((int32_t)gpio == -1)
+    gpio  = (__mmap_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, ODROIDXU_GPX_BASE) ;
+    if ((__mmap_t)gpio == -1)
       return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (GPIO) failed: %s\n", strerror (errno)) ;
 
   //#define ODROIDXU_GPA_BASE   0x14010000  // GPA0,1,2, GPB0,1,2,3,4
-    gpio1 = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, ODROIDXU_GPA_BASE) ;
-    if ((int32_t)gpio1 == -1)
+    gpio1 = (__mmap_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, ODROIDXU_GPA_BASE) ;
+    if ((__mmap_t)gpio1 == -1)
       return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (GPIO) failed: %s\n", strerror (errno)) ;
 
   // ADC
@@ -2999,34 +3102,34 @@ int wiringPiSetup (void)
       physToGpio = physToGpioR2 ;
     }
 
-    gpio = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_BASE) ;
-    if ((int32_t)gpio == -1)
+    gpio = (__mmap_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_BASE) ;
+    if ((__mmap_t)gpio == -1)
       return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (GPIO) failed: %s\n", strerror (errno)) ;
 
   // PWM
 
-    pwm = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PWM) ;
-    if ((int32_t)pwm == -1)
+    pwm = (__mmap_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PWM) ;
+    if ((__mmap_t)pwm == -1)
       return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (PWM) failed: %s\n", strerror (errno)) ;
 
   // Clock control (needed for PWM)
 
-    clk = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, CLOCK_BASE) ;
-    if ((int32_t)clk == -1)
+    clk = (__mmap_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, CLOCK_BASE) ;
+    if ((__mmap_t)clk == -1)
       return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (CLOCK) failed: %s\n", strerror (errno)) ;
 
   // The drive pads
 
-    pads = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PADS) ;
-    if ((int32_t)pads == -1)
+    pads = (__mmap_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PADS) ;
+    if ((__mmap_t)pads == -1)
       return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (PADS) failed: %s\n", strerror (errno)) ;
   }
 
 #ifdef	USE_TIMER
 // The system timer
 
-  timer = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_TIMER) ;
-  if ((int32_t)timer == -1)
+  timer = (__mmap_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_TIMER) ;
+  if ((__mmap_t)timer == -1)
     return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (TIMER) failed: %s\n", strerror (errno)) ;
 
 // Set the timer to free-running, 1MHz.

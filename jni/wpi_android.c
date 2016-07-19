@@ -32,6 +32,10 @@ void Java_com_hardkernel_wiringpi_MainActivity_digitalWrite(JNIEnv* env, jobject
     digitalWrite(port, onoff);
 }
 
+void Java_com_hardkernel_wiringpi_MainActivity_pinMode(JNIEnv* env, jobject obj, jint port, jint value) {
+    pinMode(port, value);
+}
+
 jint Java_com_hardkernel_wiringpi_MainActivity_wiringPiSetupSys(JNIEnv* env, jobject obj) {
     wiringPiSetupSys();
     return 0;
