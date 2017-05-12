@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Example WiringPi</string>
+    <string name="action_settings">Settings</string>
+    <string name="ADC">ADC</string>
+    <string name="LED">LED</string>
+    <string name="PWM_COUNT">PWM Count : </string>
+    <string name="one">1</string>
+    <string name="two">2</string>
+    <string name="enable_PWM1">Enable PWM 1</string>
+    <string name="duty">Duty</string>
+    <string name="enable_PWM2">Enable PWM 2</string>
+    <string name="Temperature">Temperature</string>
+    <string name="Pressure">Pressure</string>
+    <string name="UV_index">UV index</string>
+    <string name="visible">Visible</string>
+    <string name="IR">IR</string>
+    <string name="Humidity">Humidity</string>
+    <string name="Write">send string to UART port.</string>
+    <string name="Read">read UART port.</string>
+    <string name="celcius">°C</string>
+    <string name="BME280">BME280</string>
+    <string name="SI1132">SI1132</string>
+    <string name="DS1820_ID">DS1820</string>
+    <string name="Tinkering_Kit">Introduction C2 Tinkering Kit</string>
+    <string name="Tinkering_Kit_link">http://odroid.com/dokuwiki/doku.php?id=en:c_tinkering</string>
+    <string name="Hardware_PWM">Hardware PWM</string>
+    <string name="Hardware_PWM_link">http://odroid.com/dokuwiki/doku.php?id=en:c2_hardware_pwm</string>
+    <string name="Weather_Board">Use to Weather-Board</string>
+    <string name="Weather_Board_link">http://odroid.com/dokuwiki/doku.php?id=en:c_hardware_i2c</string>
+    <string name="Dallas_1Wire">Dallas 1-Wire Support</string>
+    <string name="Dallas_1Wire_link">http://odroid.com/dokuwiki/doku.php?id=en:c2_hardware_1w</string>
+    <string name="uart_interface">UART interface using the C2 Tinkering Kit</string>
+    <string name="uart_interface_link">http://odroid.com/dokuwiki/doku.php?id=en:c2_hardware_uart</string>
+    <string name="altitude">Altitude</string>
+
+</resources>

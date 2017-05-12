@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        is-multidex="true"
+        jar="/media/codewalker/projects/example-wiringPi_c2/app/build/intermediates/incremental-runtime-classes/debug/instant-run.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.2"
+        sha1="caff8e51a24901cfc9cd7e1cf83d84f4cb0c103b">
+        <dex dex="/media/codewalker/projects/example-wiringPi_c2/app/build/intermediates/transforms/dex/debug/folders/1000/10000/instant-run_cde09971ba354b534483b1bc640bb677f9b534c2/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/media/codewalker/projects/example-wiringPi_c2/app/build/intermediates/incremental-classes/debug/instant-run-bootstrap.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.2"
+        sha1="cb5fe970f87598e3198c65e575708fbbcf3c4cae">
+        <dex dex="/media/codewalker/projects/example-wiringPi_c2/app/build/intermediates/transforms/dex/debug/folders/1000/10000/instant-run-bootstrap_f263c1b69e86e32321ecbe615d2f5c1c2897a014/classes.dex" />
+    </item>
+
+</items>

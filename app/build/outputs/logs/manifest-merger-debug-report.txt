@@ -1,0 +1,57 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:2:1-29:12
+	package
+		ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:3:5-38
+		INJECTED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml
+		INJECTED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml
+	android:versionName
+		ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:5:5-30
+		INJECTED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml
+		INJECTED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml
+	android:versionCode
+		ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:4:5-28
+		INJECTED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml
+		INJECTED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:2:11-69
+uses-sdk
+ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:7:5-9:41
+	android:targetSdkVersion
+		ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:9:9-38
+		INJECTED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml
+		INJECTED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:8:9-35
+		INJECTED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml
+		INJECTED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml
+uses-permission#android.permission.ACCESS_SUPERUSER
+ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:11:5-75
+	android:name
+		ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:11:22-72
+application
+ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:13:5-27:19
+	android:label
+		ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:16:9-41
+	android:allowBackup
+		ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:14:9-35
+	android:icon
+		ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:15:9-45
+	android:theme
+		ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:17:9-40
+activity#com.hardkernel.wiringpi.MainActivity
+ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:18:9-26:20
+	android:label
+		ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:20:13-45
+	android:name
+		ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:19:13-41
+intent-filter#android.intent.action.MAIN+android.intent.category.LAUNCHER
+ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:21:13-25:29
+action#android.intent.action.MAIN
+ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:22:17-69
+	android:name
+		ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:22:25-66
+category#android.intent.category.LAUNCHER
+ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:24:17-77
+	android:name
+		ADDED from /media/codewalker/projects/example-wiringPi_c2/app/src/main/AndroidManifest.xml:24:27-74
