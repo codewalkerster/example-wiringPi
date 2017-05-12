@@ -275,7 +275,8 @@ public class MainActivity extends Activity {
 
                     wiringPiSetup();
 
-                    exportGPIO();
+                    for (int i = 0; i < ledPorts.length; i++)
+                        pinMode(ledPorts[i], OUTPUT);
 
                     mStopGPIO = false;
                     handler.postDelayed(mRunnableGPIO, 100);
@@ -287,7 +288,6 @@ public class MainActivity extends Activity {
                         cb.setEnabled(false);
                     }
                     mPB_ADC.setEnabled(false);
-                    unexportGPIO();
                 }
             }
         });
@@ -661,52 +661,6 @@ public class MainActivity extends Activity {
 
         if (!mStopGPIO)
             handler.postDelayed(mRunnableGPIO, 100);
-    }
-
-    boolean exportGPIO() {
-        /*
-        try {
-            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
-            for (int port: ledPorts) {
-                os.writeBytes("echo " + port + " > /sys/class/gpio/export\n");
-                os.writeBytes("chmod 666 /sys/class/gpio/gpio" + port + "/direction\n");
-                os.writeBytes("echo out > /sys/class/gpio/gpio" + port + "/direction\n");
-                os.writeBytes("chmod 666 /sys/class/gpio/gpio" + port + "/value\n");
-            }
-            os.flush();
-            Thread.sleep(1000);
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-            return false;
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
-        */
-        for (int i = 0; i < ledPorts.length; i++)
-            pinMode(ledPorts[i], OUTPUT);
-
-        return true;
-    }
-
-    boolean unexportGPIO() {
-        /*
-        try {
-            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
-            for (int port : ledPorts) {
-                os.writeBytes("echo " + port + " > /sys/class/gpio/unexport\n");
-            }
-            os.flush();
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-            return false;
-        }
-        */
-
-        return true;
     }
     //GPIO {{{
 
