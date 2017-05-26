@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Example WiringPi</string>
+    <string name="action_settings">Settings</string>
+    <string name="ADC">ADC</string>
+    <string name="LED">LED</string>
+
+    <string name="GPIO_24">GPIOX.BIT0(#97)</string>
+    <string name="GPIO_23">GPIOX.BIT11(#108)</string>
+    <string name="GPIO_22">GPIOX.BIT3(#100)</string>
+    <string name="GPIO_21">GPIOX.BIT4(#101)</string>
+    <string name="GPIO_14">GPIOX.BIT8(#105)</string>
+    <string name="GPIO_13">GPIOX.BIT9(#106)</string>
+    <string name="GPIO_12">GPIOX.BIT10(#107)</string>
+    <string name="GPIO_3">GPIOX.BIT18(#115)</string>
+    <string name="GPIO_2">GPIOX.BIT19(#116)</string>
+    <string name="GPIO_0">GPIOY.BIT8(#88)</string>
+    <string name="GPIO_7">GPIOY.BIT3(#83)</string>
+    <string name="GPIO_1">GPIOY.BIT7(#87)</string>
+    <string name="GPIO_4">GPIOX.BIT7(#104)</string>
+    <string name="GPIO_5">GPIOX.BIT5(#102)</string>
+    <string name="GPIO_6">GPIOX.BIT6(#103)</string>
+    <string name="GPIO_10">GPIOX.BIT20(#117)</string>
+    <string name="GPIO_26">GPIOX.BIT2(#99)</string>
+    <string name="GPIO_11">GPIOX.BIT21(#118)</string>
+    <string name="GPIO_27">GPIOX.BIT1(#98)</string>
+
+    <string name="PWM_COUNT">PWM Count : </string>
+    <string name="one">1</string>
+    <string name="two">2</string>
+    <string name="enable_PWM1">Enable PWM 1</string>
+    <string name="duty">Duty</string>
+    <string name="enable_PWM2">Enable PWM 2</string>
+    
+    <string name="Temperature">Temperature</string>
+    <string name="Pressure">Pressure</string>
+
+    <string name="Visible_index">Visible index</string>
+    <string name="Lux">Lux</string>
+    <string name="UV">UV</string>
+
+    <string name="Humidity">Humidity</string>
+
+    <string name="Write">echo /dev/ttyS2</string>
+
+    <string name="Read">cat /dev/ttyS2</string>
+    <string name="celcius">°C</string>
+    <string name="BMP085">BMP085</string>
+    <string name="SI1132">SI1132</string>
+    <string name="SI720x">SI720x</string>
+    <string name="DS1820_ID">DS1820</string>
+    <string name="Tinkering_Kit">Introduction C Tinkering Kit</string>
+    <string name="Tinkering_Kit_link">http://odroid.com/dokuwiki/doku.php?id=en:c1_tinkering</string>
+    <string name="Hardware_PWM">Hardware PWM</string>
+    <string name="Hardware_PWM_link">http://odroid.com/dokuwiki/doku.php?id=en:c1_hardware_pwm</string>
+    <string name="Weather_Board">Use to Weather-Board</string>
+    <string name="Weather_Board_link">http://odroid.com/dokuwiki/doku.php?id=en:c1_wb_16x2lcd</string>
+    <string name="Dallas_1Wire">Dallas 1-Wire Support</string>
+    <string name="Dallas_1Wire_link">http://odroid.com/dokuwiki/doku.php?id=en:c1_hardware_1w</string>
+    <string name="uart_interface">UART interface using the C1 Tinkering Kit</string>
+    <string name="uart_interface_link">http://odroid.com/dokuwiki/doku.php?id=en:c1_hardware_uart</string>
+
+</resources>
