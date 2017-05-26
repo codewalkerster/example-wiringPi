@@ -323,7 +323,7 @@ public class MainActivity extends Activity {
                 mSB_DutyPWM1.setEnabled(isChecked);
                 mSB_DutyPWM1.setProgress(0);
                 mTV_Duty1.setText("Duty : 0");
-                setEnalbePWM(0, isChecked);
+                setEnablePWM(0, isChecked);
             }
         });
 
@@ -337,7 +337,7 @@ public class MainActivity extends Activity {
                 mSB_DutyPWM2.setEnabled(isChecked);
                 mSB_DutyPWM2.setProgress(0);
                 mTV_Duty2.setText("Duty : 0");
-                setEnalbePWM(1, isChecked);
+                setEnablePWM(1, isChecked);
             }
         });
 
@@ -697,7 +697,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void setEnalbePWM(int index, boolean enable) {
+    private void setEnablePWM(int index, boolean enable) {
         try {
             BufferedWriter bw = new BufferedWriter(new FileWriter(mPWMEnableNode + index));
             if (enable)
