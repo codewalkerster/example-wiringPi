@@ -469,6 +469,7 @@ public class MainActivity extends Activity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 // TODO Auto-generated method stub
                 if (isChecked) {
+                    insmodI2C();
                     if (openWeatherBoard() == -1) {
                         Log.e(TAG, "filed");
                         return;
@@ -476,6 +477,7 @@ public class MainActivity extends Activity {
                     mStopWeather = false;
                     handler.postDelayed(mRunnableWeather, 300);
                 } else {
+                    rmmodI2C();
                     mStopWeather = true;
                     closeWeatherBoard();
                 }
@@ -732,6 +734,36 @@ public class MainActivity extends Activity {
     //PWM }}}
 
     //I2C {{{
+    private void insmodI2C() {
+        try {
+            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
+            os.writeBytes("insmod /system/lib/modules/aml_i2c.ko");
+            os.flush();
+            Thread.sleep(100);
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    private void rmmodI2C() {
+        try {
+            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
+            os.writeBytes("rmmod aml_i2c\n");
+            os.flush();
+            Thread.sleep(100);
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
     private void updateWeather() {
         if (mStopWeather == true)
             return;
