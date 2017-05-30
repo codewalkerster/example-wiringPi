@@ -737,7 +737,7 @@ public class MainActivity extends Activity {
     private void insmodI2C() {
         try {
             DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
-            os.writeBytes("insmod /system/lib/modules/aml_i2c.ko");
+            os.writeBytes("insmod /system/lib/modules/aml_i2c.ko\n");
             os.flush();
             Thread.sleep(100);
         } catch (IOException e1) {
