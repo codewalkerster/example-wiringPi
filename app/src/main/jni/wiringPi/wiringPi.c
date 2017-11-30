@@ -84,19 +84,6 @@ typedef unsigned long __mmap_t;
 typedef uint32_t __mmap_t;
 #endif
 
-
-#ifdef ANDROID
-//#ifndef HAVE_MMAP64
-//#if __ANDROID_API__ <= 21
-extern void*  __mmap2(void *, size_t, int, int, int, off_t);
-inline void *mmap64(void *addr, size_t length, int prot, int flags,
-        int fd, off64_t offset)
-{
-    return __mmap2(addr, length, prot, flags, fd, offset >> 12);
-}
-//#endif
-#endif
-
 #ifndef	TRUE
 #define	TRUE	(1==1)
 #define	FALSE	(1==2)
