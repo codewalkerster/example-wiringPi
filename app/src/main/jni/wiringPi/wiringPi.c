@@ -68,6 +68,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
+#include <sys/utsname.h>
 
 #include "softPwm.h"
 #include "softTone.h"
@@ -87,6 +88,10 @@ typedef uint32_t __mmap_t;
 #ifndef	TRUE
 #define	TRUE	(1==1)
 #define	FALSE	(1==2)
+#endif
+
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
 #endif
 
 // Environment Variables
@@ -284,6 +289,7 @@ static void (*isrFunctions [64])(void) ;
 //	Cope for 3 different board revisions here.
 
 static int *pinToGpio ;
+static int pin_array_count;
 
 // Revision 1, 1.1:
 
@@ -700,13 +706,10 @@ struct gpioctrl_iocreg {
 #define GPIO_B3_PUD_OFFSET  0x00C8
 #define GPIO_B3_END         214
 
-#define piAinNode0_xu   "/sys/devices/12d10000.adc/iio:device0/in_voltage0_raw"
-#define piAinNode1_xu   "/sys/devices/12d10000.adc/iio:device0/in_voltage3_raw"
+static char *piAinNode0_xu;
+static char *piAinNode1_xu;
 
 static int  piModel = PI_MODEL_UNKNOWN;
-
-// Use ODROID-C Model
-static int  piThreadIrqMode = FALSE;
 
 static int sysFdData [64] = {
     -1, -1, -1, -1, -1, -1, -1, -1, // 0...7
@@ -729,6 +732,24 @@ static int sysFdIrqType [64] = {
     -1, -1, -1, -1, -1, -1, -1, -1, // 48...55
     -1, -1, -1, -1, -1, -1, -1, -1, // 56...63
 };
+
+static int gpioToPin(int gpio)
+{
+	int pin;
+
+	if (pinToGpio == NULL) {
+		(void)wiringPiFailure (WPI_FATAL, "%s: wiringPi is not initialized yet\n", __func__);
+		return -1;
+	}
+
+	for (pin = 0; pin < pin_array_count; ++pin) {
+		if (pinToGpio[pin] == gpio)
+			return pin;
+	}
+
+	(void)wiringPiFailure (WPI_FATAL, "%s: could not find the pin of %d gpio\n", __func__, gpio);
+	return -1;
+}
 
 //
 // sysfs FD offset
@@ -1890,7 +1911,7 @@ void pinMode (int pin, int mode)
   int origPin = pin ;
   unsigned int  gpio_mask = PI_GPIO_MASK;
 
-	LOGI("pin = %d, mode = %d", pin, mode);
+    LOGI("pin = %d, mode = %d", pin, mode);
   if ( piModel == PI_MODEL_ODROIDC  )      gpio_mask = ODROIDC_GPIO_MASK;
   if ( piModel == PI_MODEL_ODROIDC2 )      gpio_mask = ODROIDC2_GPIO_MASK;
   if ( piModel == PI_MODEL_ODROIDXU_34 )   gpio_mask = ODROIDXU_GPIO_MASK;
@@ -1903,6 +1924,7 @@ void pinMode (int pin, int mode)
       pin = physToGpio [pin] ;
     else if (wiringPiMode != WPI_MODE_GPIO)
       return ;
+    LOGI("wiringPiMode = %d", WPI_MODE_PINS);
 
     wiringPiGpioCheck (__func__, origPin, pin);
 
@@ -2165,26 +2187,7 @@ int digitalRead (int pin)
   {
     /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)	// Sys mode
     {
-      int   fd_pos = 0;
-
-      if      ( piModel == PI_MODEL_ODROIDC )   {
-        fd_pos = pin < GPIO_PIN_BASE ? 0: pin - GPIO_PIN_BASE;
-      }
-      else if ( piModel == PI_MODEL_ODROIDC2 )	{
-        fd_pos = pin < C2_GPIOY_PIN_START ? 63 : pin - C2_GPIOY_PIN_START;
-      }
-      else if ( piModel == PI_MODEL_ODROIDXU_34 )   {
-        int offset = 0;
-
-        offset = gpioFdOffsetXU34(pin);
-
-        if(offset != -1)
-            fd_pos = pin - offset;
-        else
-            fd_pos = 63;
-      }
-      else
-        fd_pos = pin;
+      int   fd_pos = gpioToPin(pin);
 
       if ( sysFds [fd_pos] == -1)
         return LOW ;
@@ -2259,26 +2262,7 @@ void digitalWrite (int pin, int value)
   {
     /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)	// Sys mode
     {
-      int   fd_pos = 0;
-
-      if      ( piModel == PI_MODEL_ODROIDC )   {
-        fd_pos = pin < GPIO_PIN_BASE ? 0: pin - GPIO_PIN_BASE;
-      }
-      else if ( piModel == PI_MODEL_ODROIDC2 )	{
-        fd_pos = pin < C2_GPIOY_PIN_START ? 63 : pin - C2_GPIOY_PIN_START;
-      }
-      else if ( piModel == PI_MODEL_ODROIDXU_34 )   {
-        int offset = 0;
-
-        offset = gpioFdOffsetXU34(pin);
-
-        if(offset != -1)
-            fd_pos = pin - offset;
-        else
-            fd_pos = 63;
-      }
-      else
-        fd_pos = pin;
+      int   fd_pos = gpioToPin(pin);
 
       if (sysFds [fd_pos] != -1)
       {
@@ -2474,6 +2458,130 @@ void pwmToneWrite (int pin, int freq)
  *********************************************************************************
  */
 
+union	reg_bitfield {
+	unsigned int	wvalue;
+	struct {
+		unsigned int	bit0  : 1;
+		unsigned int	bit1  : 1;
+		unsigned int	bit2  : 1;
+		unsigned int	bit3  : 1;
+		unsigned int	bit4  : 1;
+		unsigned int	bit5  : 1;
+		unsigned int	bit6  : 1;
+		unsigned int	bit7  : 1;
+		unsigned int	bit8  : 1;
+		unsigned int	bit9  : 1;
+		unsigned int	bit10 : 1;
+		unsigned int	bit11 : 1;
+		unsigned int	bit12 : 1;
+		unsigned int	bit13 : 1;
+		unsigned int	bit14 : 1;
+		unsigned int	bit15 : 1;
+		unsigned int	bit16 : 1;
+		unsigned int	bit17 : 1;
+		unsigned int	bit18 : 1;
+		unsigned int	bit19 : 1;
+		unsigned int	bit20 : 1;
+		unsigned int	bit21 : 1;
+		unsigned int	bit22 : 1;
+		unsigned int	bit23 : 1;
+		unsigned int	bit24 : 1;
+		unsigned int	bit25 : 1;
+		unsigned int	bit26 : 1;
+		unsigned int	bit27 : 1;
+		unsigned int	bit28 : 1;
+		unsigned int	bit29 : 1;
+		unsigned int	bit30 : 1;
+		unsigned int	bit31 : 1;
+	} bits;
+};
+
+void digitalWriteByte_XU(int value)
+{
+	union	reg_bitfield	gpx1, gpx2, gpa0;
+
+	/* Read data register */
+	gpx1.wvalue = *(gpio  + (GPIO_X1_DAT_OFFSET >> 2));
+	gpx2.wvalue = *(gpio  + (GPIO_X2_DAT_OFFSET >> 2));
+	gpa0.wvalue = *(gpio1 + (GPIO_A0_DAT_OFFSET >> 2));
+
+	/* Wiring PI GPIO0 = XU3/4 GPA0.3 */
+	gpa0.bits.bit3 = (value & 0x01);
+	/* Wiring PI GPIO1 = XU3/4 GPA0.2 */
+	gpa0.bits.bit2 = (value & 0x02);
+	/* Wiring PI GPIO2 = XU3/4 GPX1.5 */
+	gpx1.bits.bit5 = (value & 0x04);
+	/* Wiring PI GPIO3 = XU3/4 GPX1.6 */
+	gpx1.bits.bit6 = (value & 0x08);
+	/* Wiring PI GPIO4 = XU3/4 GPX1.3 */
+	gpx1.bits.bit3 = (value & 0x10);
+	/* Wiring PI GPIO5 = XU3/4 GPX1.7 */
+	gpx1.bits.bit7 = (value & 0x20);
+	/* Wiring PI GPIO6 = XU3/4 GPX2.0 */
+	gpx2.bits.bit0 = (value & 0x40);
+	/* Wiring PI GPIO7 = XU3/4 GPX1.2 */
+	gpx1.bits.bit2 = (value & 0x80);
+
+	/* update data register */
+	*(gpio  + (GPIO_X1_DAT_OFFSET >> 2)) = gpx1.wvalue;
+	*(gpio  + (GPIO_X2_DAT_OFFSET >> 2)) = gpx2.wvalue;
+	*(gpio1 + (GPIO_A0_DAT_OFFSET >> 2)) = gpa0.wvalue;
+}
+
+void digitalWriteByte_C(int value)
+{
+	union	reg_bitfield	gpiox, gpioy;
+
+	gpiox.wvalue = *(gpio + GPIOX_INP_REG_OFFSET);
+	gpioy.wvalue = *(gpio + GPIOY_INP_REG_OFFSET);
+
+	/* Wiring PI GPIO0 = C1 GPIOY.8 */
+	gpioy.bits.bit8 = (value & 0x01);
+	/* Wiring PI GPIO1 = C1 GPIOY.7 */
+	gpioy.bits.bit7 = (value & 0x02);
+	/* Wiring PI GPIO2 = C1 GPIOX.19 */
+	gpiox.bits.bit19 = (value & 0x04);
+	/* Wiring PI GPIO3 = C1 GPIOX.18 */
+	gpiox.bits.bit18 = (value & 0x08);
+	/* Wiring PI GPIO4 = C1 GPIOX.7 */
+	gpiox.bits.bit7 = (value & 0x10);
+	/* Wiring PI GPIO5 = C1 GPIOX.5 */
+	gpiox.bits.bit5 = (value & 0x20);
+	/* Wiring PI GPIO6 = C1 GPIOX.6 */
+	gpiox.bits.bit6 = (value & 0x40);
+	/* Wiring PI GPIO7 = C1 GPIOY.3 */
+	gpioy.bits.bit3 = (value & 0x80);
+
+	*(gpio + GPIOX_OUTP_REG_OFFSET) = gpiox.wvalue;
+	*(gpio + GPIOY_OUTP_REG_OFFSET) = gpioy.wvalue;
+}
+
+void digitalWriteByte_C2(int value)
+{
+	union	reg_bitfield	gpiox;
+
+	gpiox.wvalue = *(gpio + C2_GPIOX_INP_REG_OFFSET);
+
+	/* Wiring PI GPIO0 = C1 GPIOX.19 */
+	gpiox.bits.bit19 = (value & 0x01);
+	/* Wiring PI GPIO1 = C1 GPIOX.10 */
+	gpiox.bits.bit10 = (value & 0x02);
+	/* Wiring PI GPIO2 = C1 GPIOX.11 */
+	gpiox.bits.bit11 = (value & 0x04);
+	/* Wiring PI GPIO3 = C1 GPIOX.9 */
+	gpiox.bits.bit9 = (value & 0x08);
+	/* Wiring PI GPIO4 = C1 GPIOX.8 */
+	gpiox.bits.bit8 = (value & 0x10);
+	/* Wiring PI GPIO5 = C1 GPIOX.5 */
+	gpiox.bits.bit5 = (value & 0x20);
+	/* Wiring PI GPIO6 = C1 GPIOX.3 */
+	gpiox.bits.bit3 = (value & 0x40);
+	/* Wiring PI GPIO7 = C1 GPIOX.21 */
+	gpiox.bits.bit21 = (value & 0x80);
+
+	*(gpio + C2_GPIOX_OUTP_REG_OFFSET) = gpiox.wvalue;
+}
+
 void digitalWriteByte (int value)
 {
   uint32_t pinSet = 0 ;
@@ -2493,13 +2601,26 @@ void digitalWriteByte (int value)
   {
     for (pin = 0 ; pin < 8 ; ++pin)
     {
-      digitalWrite (pin, value & mask) ;
+      digitalWrite (pinToGpio[pin], value & mask) ;
       mask <<= 1 ;
     }
     return ;
   }
   else
   {
+    switch(piModel) {
+    case PI_MODEL_ODROIDC:
+      digitalWriteByte_C(value);
+      return;
+    case PI_MODEL_ODROIDC2:
+      digitalWriteByte_C2(value);
+      return;
+    case PI_MODEL_ODROIDXU_34:
+      digitalWriteByte_XU(value);
+      return;
+    default :
+      break;
+    }
     for (pin = 0 ; pin < 8 ; ++pin)
     {
       if ((value & mask) == 0)
@@ -2532,59 +2653,13 @@ int waitForInterrupt (int pin, int mS)
   int fd, x ;
   uint8_t c ;
   struct pollfd polls ;
-  int fd_base;
 
-  /**/ if (wiringPiMode == WPI_MODE_PINS)
-    pin = pinToGpio [pin & 63] ;
-  else if (wiringPiMode == WPI_MODE_PHYS)
-    pin = physToGpio [pin & 63] ;
-
-  if ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 )  {
-
-	if ( piModel == PI_MODEL_ODROIDC2 )	{
-	    fd_base = pin < C2_GPIOY_PIN_START ? 63: pin - C2_GPIOY_PIN_START;
-	}
-	else	{
-	    fd_base = pin < GPIO_PIN_BASE ? 0: pin - GPIO_PIN_BASE;
-	}
-
-    if ((fd = sysFds [fd_base & 63]) == -1)
-      return -2 ;
-
-  // Setup poll structure
-
-    polls.fd     = fd ;
-
-    if(piThreadIrqMode)
-      polls.events = POLLIN ;   // Normal data!
-    else
-      polls.events = POLLPRI ;	// Urgent data!
-  }
-  else if ( piModel == PI_MODEL_ODROIDXU_34 )   {
-    int offset = 0;
-
-    offset = gpioFdOffsetXU34(pin);
-
-    if(offset != -1)
-        fd_base = pin - offset;
-    else
-        fd_base = 63;
-
-    if ((fd = sysFds [fd_base & 63]) == -1)
-      return -2 ;
-
-  // Setup poll structure
-    polls.fd     = fd ;
-    polls.events = POLLPRI ;	// Urgent data!
-  }
-  else  {
     if ((fd = sysFds [pin]) == -1)
       return -2 ;
-  // Setup poll structure
 
+    // Setup poll structure
     polls.fd     = fd ;
     polls.events = POLLPRI ;	// Urgent data!
-  }
 
 
 // Wait for it ...
@@ -2597,19 +2672,6 @@ wait:
 
   (void)read (fd, &c, 1) ;
   lseek (fd, 0, SEEK_SET) ;
-
-  if (  (piModel == PI_MODEL_ODROIDC  && piThreadIrqMode) ||
-	(piModel == PI_MODEL_ODROIDC2 && piThreadIrqMode) )
-  {
-    if ( sysFdData[fd_base] != c )  {
-      sysFdData[fd_base] = c;
-      if      (( sysFdIrqType[fd_base] == INT_EDGE_RISING  ) && ( c == '1' ))  return 1;
-      else if (( sysFdIrqType[fd_base] == INT_EDGE_FALLING ) && ( c == '0' ))  return 1;
-      else if (( sysFdIrqType[fd_base] == INT_EDGE_BOTH    )                )  return 1;
-    }
-    usleep(100);
-    goto wait;
-  }
 
   return x ;
 }
@@ -2632,45 +2694,9 @@ static void *interruptHandler (void *arg)
   myPin   = pinPass ;
   pinPass = -1 ;
 
-  if (  piModel == PI_MODEL_ODROIDC  ||
-	piModel == PI_MODEL_ODROIDC2 ||
-	piModel == PI_MODEL_ODROIDXU_34 )  {
-    int gpioPin, fd_base;
-
-    /**/ if (wiringPiMode == WPI_MODE_UNINITIALISED)
-      return wiringPiFailure (WPI_FATAL, "wiringPiISR: wiringPi has not been initialised. Unable to continue.\n") ;
-    else if (wiringPiMode == WPI_MODE_PINS)
-      gpioPin = pinToGpio [myPin & 63] ;
-    else if (wiringPiMode == WPI_MODE_PHYS)
-      gpioPin = physToGpio [myPin & 63] ;
-    else
-      gpioPin = myPin ;
-
-    if      ( piModel == PI_MODEL_ODROIDC )
-	fd_base = gpioPin < GPIO_PIN_BASE      ? 0 : gpioPin - GPIO_PIN_BASE;
-    else if ( piModel == PI_MODEL_ODROIDC2 )
-	fd_base = gpioPin < C2_GPIOY_PIN_START ? 63: gpioPin - C2_GPIOY_PIN_START;
-    else    {
-        int offset = 0;
-
-        offset = gpioFdOffsetXU34(gpioPin);
-
-        if(offset != -1)
-            fd_base = gpioPin - offset;
-        else
-            fd_base = 63;
-    }
-
-    for (;;)
-      if (waitForInterrupt (myPin, -1) > 0) {
-        isrFunctions [fd_base] () ;
-      }
-  }
-  else  {
     for (;;)
       if (waitForInterrupt (myPin, -1) > 0)
         isrFunctions [myPin] () ;
-  }
 
   return NULL ;
 }
@@ -2759,78 +2785,22 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 // Now pre-open the /sys/class node - but it may already be open if
 //	we are in Sys mode...
 
-  if      ( piModel == PI_MODEL_ODROIDC || piModel == PI_MODEL_ODROIDC2 )  {
-    int fd_base = 0;
-
-    if (piModel == PI_MODEL_ODROIDC2 )
-	fd_base = bcmGpioPin < C2_GPIOY_PIN_START ? 63: bcmGpioPin - C2_GPIOY_PIN_START;
-    else
-	fd_base = bcmGpioPin < GPIO_PIN_BASE      ? 0 : bcmGpioPin - GPIO_PIN_BASE;
-
-    if (sysFds [fd_base] == -1)
-    {
-      if(piThreadIrqMode)
-        sprintf (fName, "/sys/class/gpio/gpio%d/value", bcmGpioPin) ;
-      else
-        sprintf (fName, "/sys/class/aml_gpio/gpio%d/value", bcmGpioPin) ;
-
-      if ((sysFds [fd_base] = open (fName, O_RDWR)) < 0)
-        return wiringPiFailure (WPI_FATAL, "wiringPiISR: unable to open %s: %s\n", fName, strerror (errno)) ;
-      sysFdIrqType [fd_base] = mode;
-    }
-
-  // Clear any initial pending interrupt
-
-    ioctl (sysFds [fd_base], FIONREAD, &count) ;
-    for (i = 0 ; i < count ; ++i)
-      read (sysFds [fd_base], &c, 1) ;
-
-    sysFdData[fd_base] = c;
-    isrFunctions [fd_base] = function ;
-  }
-  else if ( piModel == PI_MODEL_ODROIDXU_34 )   {
-    int fd_base = 0, offset = 0;
-
-    offset = gpioFdOffsetXU34(bcmGpioPin);
-
-    if(offset != -1)
-        fd_base = bcmGpioPin - offset;
-    else
-        fd_base = 63;
-
-    if (sysFds [fd_base] == -1)
+    if (sysFds [pin] == -1)
     {
       sprintf (fName, "/sys/class/gpio/gpio%d/value", bcmGpioPin) ;
 
-      if ((sysFds [fd_base] = open (fName, O_RDWR)) < 0)
+      if ((sysFds [pin] = open (fName, O_RDWR)) < 0)
         return wiringPiFailure (WPI_FATAL, "wiringPiISR: unable to open %s: %s\n", fName, strerror (errno)) ;
+      sysFdIrqType [pin] = mode;
     }
 
   // Clear any initial pending interrupt
 
-    ioctl (sysFds [fd_base], FIONREAD, &count) ;
+    ioctl (sysFds [pin], FIONREAD, &count) ;
     for (i = 0 ; i < count ; ++i)
-      read (sysFds [fd_base], &c, 1) ;
-
-    sysFdData[fd_base] = c;
-    isrFunctions [fd_base] = function ;
-  }
-  else  {
-    if (sysFds [bcmGpioPin] == -1)
-    {
-      sprintf (fName, "/sys/class/gpio/gpio%d/value", bcmGpioPin) ;
-      if ((sysFds [bcmGpioPin] = open (fName, O_RDWR)) < 0)
-        return wiringPiFailure (WPI_FATAL, "wiringPiISR: unable to open %s: %s\n", fName, strerror (errno)) ;
-    }
-
-  // Clear any initial pending interrupt
-
-    ioctl (sysFds [bcmGpioPin], FIONREAD, &count) ;
-    for (i = 0 ; i < count ; ++i)
-      read (sysFds [bcmGpioPin], &c, 1) ;
+      read (sysFds [pin], &c, 1) ;
 
     isrFunctions [pin] = function ;
-  }
 
   pthread_mutex_lock (&pinMutex) ;
     pinPass = pin ;
@@ -3007,7 +2977,7 @@ int wiringPiSetup (void)
         return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: Unable to open /dev/mem: %s\n", strerror (errno)) ;
   }
 #else
-  if (model == PI_MODEL_ODROIDC2)	{
+  if (model == PI_MODEL_ODROIDC2 || model == PI_MODEL_ODROIDXU_34 )	{
     if ((fd = open ("/dev/gpiomem", O_RDWR | O_SYNC | O_CLOEXEC) ) < 0)
       return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: Unable to open /dev/gpiomem: %s\n", strerror (errno)) ;
   } else {
@@ -3016,9 +2986,12 @@ int wiringPiSetup (void)
   }
 #endif
 
+  piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
+
   if ( model == PI_MODEL_ODROIDC )  {
 
      pinToGpio =  pinToGpioOdroidC;
+    pin_array_count = ARRAY_SIZE(pinToGpioOdroidC);
     physToGpio = physToGpioOdroidC;
 
   // GPIO:
@@ -3031,23 +3004,17 @@ int wiringPiSetup (void)
   // ADC sysfs open (/sys/class/saradc/saradc_ch0, ch1)
     adcFds [0] = open (piAinNode0, O_RDONLY) ;
     adcFds [1] = open (piAinNode1, O_RDONLY) ;
-
-    // Check aml_gpio directory for gpio irq
-    {
-        struct stat s;
-
-        if(-1 == stat("/sys/class/aml_gpio", &s))   piThreadIrqMode = TRUE;
-        else                                        piThreadIrqMode = FALSE;
-    }
   }
   else if ( model == PI_MODEL_ODROIDC2 )	{
 
     if(rev == PI_VERSION_1) {
 	 pinToGpio =  pinToGpioOdroidC2_Rev1_0;
+	 pin_array_count = ARRAY_SIZE(pinToGpioOdroidC2_Rev1_0);
 	physToGpio = physToGpioOdroidC2_Rev1_0;
     }
     else {
 	 pinToGpio =  pinToGpioOdroidC2_Rev1_1;
+	 pin_array_count = ARRAY_SIZE(pinToGpioOdroidC2_Rev1_1);
 	physToGpio = physToGpioOdroidC2_Rev1_1;
     }
 
@@ -3062,17 +3029,25 @@ int wiringPiSetup (void)
   // ADC sysfs open (/sys/class/saradc/saradc_ch0, ch1)
     adcFds [0] = open (C2_piAinNode0, O_RDONLY) ;
     adcFds [1] = open (C2_piAinNode1, O_RDONLY) ;
-
-    // Check aml_gpio directory for gpio irq
-    {
-        struct stat s;
-
-        if(-1 == stat("/sys/class/aml_gpio", &s))   piThreadIrqMode = TRUE;
-        else                                        piThreadIrqMode = FALSE;
-    }
   }
   else if ( model == PI_MODEL_ODROIDXU_34 ) {
+  // Check the kernel version and then set the ADC files
+    struct utsname uname_buf;
+
+    uname(&uname_buf);
+    if (strncmp(uname_buf.release, "4.14", 4) == 0) {
+        piAinNode0_xu = "/sys/devices/platform/soc/12d10000.adc/iio:device0/in_voltage0_raw";
+        piAinNode1_xu = "/sys/devices/platform/soc/12d10000.adc/iio:device0/in_voltage3_raw";
+    } else if (strncmp(uname_buf.release, "4.9", 3) == 0) {
+        piAinNode0_xu = "/sys/devices/platform/soc:/12d10000.adc:/iio:device0/in_voltage0_raw";
+        piAinNode1_xu = "/sys/devices/platform/soc:/12d10000.adc:/iio:device0/in_voltage3_raw";
+    } else { // 3.10 kernel
+        piAinNode0_xu = "/sys/devices/12d10000.adc/iio:device0/in_voltage0_raw";
+        piAinNode1_xu = "/sys/devices/12d10000.adc/iio:device0/in_voltage3_raw";
+    }
+
      pinToGpio =  pinToGpioOdroidXU;
+     pin_array_count = ARRAY_SIZE(pinToGpioOdroidXU);
     physToGpio = physToGpioOdroidXU;
 
   // GPIO:
@@ -3218,15 +3193,6 @@ int wiringPiSetupSys (void)
   int model, rev, mem, maker, overVolted ;
   int pin, offset;
   char fName [128] ;
-  int i = 0;
-
-  for (i = 0; i < sizeof(sysFds) / sizeof(sysFds[0]); i++) {
-    LOGI("sysFds[%d] = %d", i, sysFds[i]);
-    if (sysFds[i] != -1) {
-      close(sysFds[i]);
-      sysFds[i] = -1;
-    }
-  }
 
   if (getenv (ENV_DEBUG) != NULL)
     wiringPiDebug = TRUE ;
@@ -3241,28 +3207,8 @@ int wiringPiSetupSys (void)
 
   if ( model == PI_MODEL_ODROIDC )  {
      pinToGpio =  pinToGpioOdroidC ;
+     pin_array_count = ARRAY_SIZE(pinToGpioOdroidC);
     physToGpio = physToGpioOdroidC ;
-
-// Open and scan the directory, looking for exported GPIOs, and pre-open
-//	the 'value' interface to speed things up for later
-
-    // Check aml_gpio directory for gpio irq
-    {
-        struct stat s;
-
-        if(-1 == stat("/sys/class/aml_gpio", &s))   piThreadIrqMode = TRUE;
-        else                                        piThreadIrqMode = FALSE;
-    }
-
-    for (pin = GPIO_PIN_BASE ; pin < GPIO_PIN_BASE + 64 ; ++pin)
-    {
-      if(piThreadIrqMode)
-          sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
-      else
-          sprintf (fName, "/sys/class/aml_gpio/gpio%d/value", pin) ;
-
-      sysFds [pin - GPIO_PIN_BASE] = open (fName, O_RDWR) ;
-    }
 
   // ADC sysfs open (/sys/class/saradc/saradc_ch0, ch1)
 
@@ -3272,32 +3218,13 @@ int wiringPiSetupSys (void)
   else if ( model == PI_MODEL_ODROIDC2 )	{
     if(rev == PI_VERSION_1) {
 	 pinToGpio =  pinToGpioOdroidC2_Rev1_0;
+	 pin_array_count = ARRAY_SIZE(pinToGpioOdroidC2_Rev1_0);
 	physToGpio = physToGpioOdroidC2_Rev1_0;
     }
     else {
 	 pinToGpio =  pinToGpioOdroidC2_Rev1_1;
+	 pin_array_count = ARRAY_SIZE(pinToGpioOdroidC2_Rev1_1);
 	physToGpio = physToGpioOdroidC2_Rev1_1;
-    }
-
-// Open and scan the directory, looking for exported GPIOs, and pre-open
-//	the 'value' interface to speed things up for later
-
-    // Check aml_gpio directory for gpio irq
-    {
-        struct stat s;
-
-        if(-1 == stat("/sys/class/aml_gpio", &s))   piThreadIrqMode = TRUE;
-        else                                        piThreadIrqMode = FALSE;
-    }
-
-    for (pin = C2_GPIOY_PIN_START ; pin < C2_GPIOY_PIN_START + 64 ; ++pin)
-    {
-      if(piThreadIrqMode)
-          sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
-      else
-          sprintf (fName, "/sys/class/aml_gpio/gpio%d/value", pin) ;
-
-      sysFds [pin - C2_GPIOY_PIN_START] = open (fName, O_RDWR) ;
     }
 
   // ADC sysfs open (/sys/class/saradc/saradc_ch0, ch1)
@@ -3306,48 +3233,39 @@ int wiringPiSetupSys (void)
     adcFds [1] = open (C2_piAinNode1, O_RDONLY) ;
   }
   else if ( model == PI_MODEL_ODROIDXU_34 ) {
+  // Check the kernel version and then set the ADC files
+    struct utsname uname_buf;
+
+    uname(&uname_buf);
+    if (strncmp(uname_buf.release, "4.14", 4) == 0) {
+        piAinNode0_xu = "/sys/devices/platform/soc/12d10000.adc/iio:device0/in_voltage0_raw";
+        piAinNode1_xu = "/sys/devices/platform/soc/12d10000.adc/iio:device0/in_voltage3_raw";
+    } else if (strncmp(uname_buf.release, "4.9", 3) == 0) {
+        piAinNode0_xu = "/sys/devices/platform/soc:/12d10000.adc:/iio:device0/in_voltage0_raw";
+        piAinNode1_xu = "/sys/devices/platform/soc:/12d10000.adc:/iio:device0/in_voltage3_raw";
+    } else { // 3.10 kernel
+        piAinNode0_xu = "/sys/devices/12d10000.adc/iio:device0/in_voltage0_raw";
+        piAinNode1_xu = "/sys/devices/12d10000.adc/iio:device0/in_voltage3_raw";
+    }
+
      pinToGpio =  pinToGpioOdroidXU ;
+     pin_array_count = ARRAY_SIZE(pinToGpioOdroidXU);
     physToGpio = physToGpioOdroidXU ;
 
-// Open and scan the directory, looking for exported GPIOs, and pre-open
-//	the 'value' interface to speed things up for later
-    for (pin = 0; pin < 255; pin++) {
-
-      offset = gpioFdOffsetXU34(pin);
-
-      if(offset != -1)    {
-        sprintf (fName, "/sys/class/gpio/gpio%d/value", pin);
-        sysFds[pin - offset] = open (fName, O_RDWR);
-      }
-    }
   // ADC
   // ADC Fds[0] = ("/sys/devices/12d10000.adc/iio:device0/in_voltage0_raw")
   // ADC Fds[1] = ("/sys/devices/12d10000.adc/iio:device0/in_voltage3_raw")
     adcFds [0] = open (piAinNode0_xu, O_RDONLY) ;
     adcFds [1] = open (piAinNode1_xu, O_RDONLY) ;
   }
-  else  {
-    boardRev = piBoardRev () ;
-
-    if (boardRev == 1)
-    {
-       pinToGpio =  pinToGpioR1 ;
-      physToGpio = physToGpioR1 ;
-    }
-    else
-    {
-       pinToGpio =  pinToGpioR2 ;
-      physToGpio = physToGpioR2 ;
-    }
 
 // Open and scan the directory, looking for exported GPIOs, and pre-open
 //	the 'value' interface to speed things up for later
     for (pin = 0 ; pin < 64 ; ++pin)
     {
-      sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
+      sprintf (fName, "/sys/class/gpio/gpio%d/value", pinToGpio[pin]) ;
       sysFds [pin] = open (fName, O_RDWR) ;
     }
-  }
 
   initialiseEpoch () ;
 
