@@ -44,62 +44,22 @@ public class MainActivity extends Activity {
     private final int DATA_UPDATE_PERIOD = 100; // 100ms
     private final int PORT_ADC1 = 0;   // ADC.AIN0
     private ProgressBar mPB_ADC;
-
-    private final static int INPUT = 0;
-    private final static int OUTPUT = 1;
-
-	/*
     private final int ledPorts[] = {
-        214, // GPIOY.3
-        234, // GPIOX.6
-        219, // GPIOY.8
-        228, // GPIOX.0
-        230, // GPIOX.2
-        232, // GPIOX.4
-        235, // GPIOX.7
-        237, // GPIOX.9
-        239, // GPIOX.11
-        247, // GPIOX.9
-        249, // GPIOX.21
-        238, // GPIOX.10
-        236, // GPIOX.8
-        233, // GPIOX.5
-        231, // GPIOX.3
-        229, // GPIOX.1
-        224, // GPIOY.13
-        225, // GPIOY.14
-        218, // GPIOX.1
+        31,  // GPX2.7(#31)
+        30,  // GPX2.6(#30)
+        28,  // GPX2.4(#28)
+        189, // GPA2.4(#189)
+        191, // GPA2.6(#191)
+        192, // GPX2.7(#192)
+        22,  // GPX1.6(#22)
+        21,  // GPA1.5(#21)
+        174, // GPA0.3(#174)
+        18,  // GPX1.2(#18)
     };
-	*/
-
-    private final int ledPorts[] = {
-        24, //214
-        23, //234
-        22, //219
-        21, //228
-        14, //230
-        13, //232
-        12, //235
-        3,  //237
-        2,  //239
-        0,  //247
-        7,  //249
-        5,  //238
-        4,  //236
-        5,  //233
-        6,  //231
-        10, //229
-        26, //224
-        11, //225
-        27, //218
-    };
-
 
     private static final int[] CHECKBOX_IDS = {
         R.id.led01, R.id.led02, R.id.led03, R.id.led04, R.id.led05,
-        R.id.led06, R.id.led07, R.id.led08, R.id.led09, R.id.led10,
-        R.id.led11, R.id.led12, R.id.led13, R.id.led14, R.id.led15,
-        R.id.led16, R.id.led17, R.id.led18, R.id.led19
+        R.id.led06, R.id.led07, R.id.led08, R.id.led09, R.id.led10
     };
 
     private List<CheckBox>mLeds;
@@ -117,57 +77,79 @@ public class MainActivity extends Activity {
     };
     //GPIO }}}
 
-    //PWM {{{
-    private RadioButton mRB_PWM1;
-    private RadioButton mRB_PWM2;
-    private ToggleButton mBtn_PWM;
-    private LinearLayout mLayout_PWM2;
-    private CheckBox mCB_EnablePWM1;
-    private CheckBox mCB_EnablePWM2;
-    private TextView mTV_Duty1;
-    private TextView mTV_Duty2;
-    private SeekBar mSB_DutyPWM1;
-    private SeekBar mSB_DutyPWM2;
-    private int mPWMCount = 1;
-    private final String PWM_PREFIX = "/sys/devices/pwm-ctrl.";
-    private final String PWM_ENABLE = "/enable";
-    private final String PWM_DUTY = "/duty";
-    private final String PWM_FREQ = "/freq"; //added J.
-    private String mPWMEnableNode;
-    private String mPWMDutyNode;
-    private String mPWMFreqNode; //added J.
-    //PWM }}}
-
     //I2C {{{
-    private boolean mStopWeather;
-    private ToggleButton mBtn_Weather;
-    //BME280 {{{
+    //BMP085 {{{
+    private boolean mStopBMP085;
+    private ToggleButton mBtn_BMP085;
     private TextView mTV_Temperature;
-    private TextView mTV_Humidity;
     private TextView mTV_Pressure;
-    private TextView mTV_Altitude;
     private String mTemperature;
-    private String mHumidity;
     private String mPressure;
-    private String mAltitude;
-    Runnable mRunnableWeather = new Runnable() {
+    Runnable mRunnableBMP085 = new Runnable() {
 
         @Override
         public void run() {
             // TODO Auto-generated method stub
-            updateWeather();
+            updateBMP085();
         }
     };
-    //BME280 }}}
+    private final static String TEMP_INPUT = "/sys/bus/i2c/drivers/bmp085/1-0077/temp0_input";
+    private final static String PRESSURE_INPUT = "/sys/bus/i2c/drivers/bmp085/1-0077/pressure0_input";
+    //BMP085 }}}
 
     //SI1132 {{{
-    private TextView mTV_UV_index;
+    private boolean mStopSI1132;
+    private ToggleButton mBtn_SI1132;
     private TextView mTV_Visible;
-    private TextView mTV_IR;
-    private String mUVindex;
-    private String mVisible;
-    private String mIR;
+    private TextView mTV_LUX;
+    private TextView mTV_UV;
+    private String mVisibleLux;
+    private String mLux;
+    private String mUV;
+    Runnable mRunnableSI1132 = new Runnable() {
+
+        @Override
+        public void run() {
+            // TODO Auto-generated method stub
+            updateSI1132();
+        }
+    };
+    private final static String VISIBLE_INDEX = "/sys/devices/i2c-1/1-0060/visible_index";
+    private final static String IR_INDEX = "/sys/devices/i2c-1/1-0060/ir_index";
+    private final static String UV_INDEX = "/sys/devices/i2c-1/1-0060/uv_index";
     //SI1132 }}}
+
+    //SI702x {{{
+    private boolean mStopSI702x;
+    private ToggleButton mBtn_SI702x;
+    private TextView mTV_Temperature2;
+    private TextView mTV_Humidity;
+    private String mTemperature2;
+    private String mHumidity;
+    Runnable mRunnableSI702x = new Runnable() {
+
+        @Override
+        public void run() {
+            // TODO Auto-generated method stub
+            updateSI702x();
+        }
+    };
+    private final static String TEMPERATURE = "/sys/bus/i2c/drivers/si702x/1-0040/temperature";
+    private final static String HUMIDITY = "/sys/bus/i2c/drivers/si702x/1-0040/humidity";
+    //SI702x }}}
+
+    private int mLCDHandle = -1;
+    private final static int LCD_ROW = 2;   // 16 Char
+    private final static int LCD_COL = 16;  // 2 Line
+    private final static int LCD_BUS = 4;   // Interface 4 Bit mode
+    private final static int LCD_UPDATE_PERIOD = 300; // 300ms
+
+    private final static int PORT_LCD_RS = 7;   // GPIOY.BIT3(#83)
+    private final static int PORT_LCD_E = 0;   // GPIOY.BIT8(#88)
+    private final static int PORT_LCD_D4 = 2;   // GPIOX.BIT19(#116)
+    private final static int PORT_LCD_D5 = 3;   // GPIOX.BIT18(#115)
+    private final static int PORT_LCD_D6 = 1;   // GPIOY.BIT7(#87)
+    private final static int PORT_LCD_D7 = 4;   // GPIOX.BIT7(#104)
     //I2C }}}
 
     //UART {{{
@@ -184,7 +166,7 @@ public class MainActivity extends Activity {
             // TODO Auto-generated method stub
 
             try {
-                BufferedReader br = new BufferedReader(new FileReader(TTYSx));
+                BufferedReader br = new BufferedReader(new FileReader(TTYS2));
                 while (!mStopSerial) {
                     while((mLine = br.readLine()) != null) {
                         Log.e(TAG, mLine);
@@ -197,7 +179,7 @@ public class MainActivity extends Activity {
             }
         }
     };
-    private final static String TTYSx = "/dev/ttyS1";
+    private final static String TTYS2 = "/dev/ttyS2";
     private Handler mHandler = new Handler() {
 
         @Override
@@ -229,35 +211,32 @@ public class MainActivity extends Activity {
         mTabHost.setup();
 
         TabSpec tab1 = mTabHost.newTabSpec("GPIO");
-        TabSpec tab2 = mTabHost.newTabSpec("PWM");
-        TabSpec tab3 = mTabHost.newTabSpec("I2C");
-        TabSpec tab4 = mTabHost.newTabSpec("UART");
-        TabSpec tab5 = mTabHost.newTabSpec("1-Wire");
+        TabSpec tab2 = mTabHost.newTabSpec("I2C");
+        TabSpec tab3 = mTabHost.newTabSpec("UART");
+        TabSpec tab4 = mTabHost.newTabSpec("1-Wire");
 
         tab1.setIndicator("GPIO");
         tab1.setContent(R.id.tab1);
-        tab2.setIndicator("PWM");
+        tab2.setIndicator("I2C");
         tab2.setContent(R.id.tab2);
-        tab3.setIndicator("I2C");
+        tab3.setIndicator("UART");
         tab3.setContent(R.id.tab3);
-        tab4.setIndicator("UART");
+        tab4.setIndicator("1-Wire");
         tab4.setContent(R.id.tab4);
-        tab5.setIndicator("1-Wire");
-        tab5.setContent(R.id.tab5);
 
         mTabHost.addTab(tab1);
         mTabHost.addTab(tab2);
         mTabHost.addTab(tab3);
         mTabHost.addTab(tab4);
-        mTabHost.addTab(tab5);
 
         mTabHost.setOnTabChangedListener(new OnTabChangeListener() {
 
             @Override
             public void onTabChanged(String tabId) {
                 // TODO Auto-generated method stub
-                mBtn_PWM.setChecked(false);
-                mBtn_Weather.setChecked(false);
+                mBtn_BMP085.setChecked(false);
+                mBtn_SI1132.setChecked(false);
+                mBtn_SI702x.setChecked(false);
                 mBtn_GPIO.setChecked(false);
                 mBtn_ReadSerial.setChecked(false);
                 mBtn_1Wire.setChecked(false);
@@ -273,10 +252,9 @@ public class MainActivity extends Activity {
                 // TODO Auto-generated method stub
                 if (isChecked) {
 
-                    wiringPiSetup();
+                    exportGPIO();
 
-                    for (int i = 0; i < ledPorts.length; i++)
-                        pinMode(ledPorts[i], OUTPUT);
+                    wiringPiSetupSys();
 
                     mStopGPIO = false;
                     handler.postDelayed(mRunnableGPIO, 100);
@@ -288,6 +266,7 @@ public class MainActivity extends Activity {
                         cb.setEnabled(false);
                     }
                     mPB_ADC.setEnabled(false);
+                    unexportGPIO();
                 }
             }
         });
@@ -309,191 +288,90 @@ public class MainActivity extends Activity {
         }
         //GPIO }}}
 
-        //PWM {{{
-        mTV_Duty1 = (TextView) findViewById(R.id.tv_duty1);
-        mTV_Duty2 = (TextView) findViewById(R.id.tv_duty2);
-
-        mCB_EnablePWM1 = (CheckBox) findViewById(R.id.cb_pwm1);
-        mCB_EnablePWM1.setEnabled(false);
-        mCB_EnablePWM1.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                // TODO Auto-generated method stub
-                mSB_DutyPWM1.setEnabled(isChecked);
-                mSB_DutyPWM1.setProgress(0);
-                mTV_Duty1.setText("Duty : 0");
-                setEnablePWM(0, isChecked);
-            }
-        });
-
-        mCB_EnablePWM2 = (CheckBox) findViewById(R.id.cb_pwm2);
-        mCB_EnablePWM2.setEnabled(false);
-        mCB_EnablePWM2.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                // TODO Auto-generated method stub
-                mSB_DutyPWM2.setEnabled(isChecked);
-                mSB_DutyPWM2.setProgress(0);
-                mTV_Duty2.setText("Duty : 0");
-                setEnablePWM(1, isChecked);
-            }
-        });
-
-        for (int i = 0; i < 100; i++) {
-            File f = new File(PWM_PREFIX + i);
-            if (f.isDirectory()) {
-                mPWMEnableNode = PWM_PREFIX + i + PWM_ENABLE;
-                Log.e(TAG, "pwm enable : " + mPWMEnableNode);
-                mPWMDutyNode = PWM_PREFIX + i + PWM_DUTY;
-                Log.e(TAG, "pwm duty : " + mPWMDutyNode);
-                mPWMFreqNode = PWM_PREFIX + i + PWM_FREQ; //added J.
-                break;
-            }
-        }
-
-        mSB_DutyPWM1 = (SeekBar) findViewById(R.id.sb_duty1);
-        mSB_DutyPWM1.setEnabled(false);
-        mSB_DutyPWM1.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                // TODO Auto-generated method stub
-                mTV_Duty1.setText("Duty : " + seekBar.getProgress());
-                setDuty(0, seekBar.getProgress());
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                // TODO Auto-generated method stub
-            }
-
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress,
-                    boolean fromUser) {
-                // TODO Auto-generated method stub
-            }
-        });
-
-        mSB_DutyPWM2 = (SeekBar) findViewById(R.id.sb_duty2);
-        mSB_DutyPWM2.setEnabled(false);
-        mSB_DutyPWM2.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                // TODO Auto-generated method stub
-                mTV_Duty2.setText("Duty : " + seekBar.getProgress());
-                setDuty(1, seekBar.getProgress());
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                // TODO Auto-generated method stub
-            }
-
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress,
-                    boolean fromUser) {
-                // TODO Auto-generated method stub
-            }
-        });
-
-        mLayout_PWM2 = (LinearLayout) findViewById(R.id.lo_pwm2);
-        mLayout_PWM2.setVisibility(View.GONE);
- 
-        mRB_PWM1 = (RadioButton) findViewById(R.id.radio_pwm1);
-        mRB_PWM1.setOnClickListener(new OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                // TODO Auto-generated method stub
-                mPWMCount = 1;
-                mCB_EnablePWM2.setEnabled(false);
-                mLayout_PWM2.setVisibility(View.GONE);
-            }
-        });
-
-        mRB_PWM2 = (RadioButton) findViewById(R.id.radio_pwm2);
-        mRB_PWM2.setOnClickListener(new OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                // TODO Auto-generated method stub
-                mPWMCount = 2;
-                mLayout_PWM2.setVisibility(View.VISIBLE);
-            }
-        });
-
-        mTV_Duty1 = (TextView) findViewById(R.id.tv_duty1);
-        mTV_Duty2 = (TextView) findViewById(R.id.tv_duty2);
-
-        mBtn_PWM = (ToggleButton) findViewById(R.id.btn_pwm);
-        mBtn_PWM.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                // TODO Auto-generated method stub
-                if (isChecked) {
-                    insmodPWM();
-                    mCB_EnablePWM1.setEnabled(true);
-                    mCB_EnablePWM1.setChecked(false);
-                    mCB_EnablePWM2.setEnabled(true);
-                    mCB_EnablePWM2.setChecked(false);
-                    mSB_DutyPWM1.setProgress(0);
-                    mSB_DutyPWM2.setProgress(0);
-                    mRB_PWM1.setEnabled(false);
-                    mRB_PWM2.setEnabled(false);
-                } else {
-                    rmmodPWM();
-                    mCB_EnablePWM1.setEnabled(false);
-                    mCB_EnablePWM1.setChecked(false);
-                    mCB_EnablePWM2.setEnabled(false);
-                    mCB_EnablePWM2.setChecked(false);
-                    mSB_DutyPWM1.setProgress(0);
-                    mSB_DutyPWM2.setProgress(0);
-                    mRB_PWM1.setEnabled(true);
-                    mRB_PWM2.setEnabled(true);
-                }
-            }
-        });
-        mBtn_PWM.setChecked(false);
-        //PWM }}}
-
         //I2C {{{
-        //BME280 {{{
-        mBtn_Weather = (ToggleButton) findViewById(R.id.tb_weather);
-        mBtn_Weather.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        //BMP085 {{{
+        mBtn_BMP085 = (ToggleButton) findViewById(R.id.btn_bmp085);
+        mBtn_BMP085.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 // TODO Auto-generated method stub
                 if (isChecked) {
-                    insmodI2C();
-                    if (openWeatherBoard() == -1) {
-                        Log.e(TAG, "filed");
-                        return;
-                    }
-                    mStopWeather = false;
-                    handler.postDelayed(mRunnableWeather, 300);
+                    /*
+                    wiringPiSetupSys();
+                    mLCDHandle = lcdInit(LCD_ROW, LCD_COL, LCD_BUS,
+                            PORT_LCD_RS, PORT_LCD_E, PORT_LCD_D4, PORT_LCD_D5, 
+                            PORT_LCD_D6, PORT_LCD_D7, 0, 0, 0, 0);
+                    Log.e(TAG, "mLCDHandler = " + mLCDHandle);
+                    if (mLCDHandle < 0)
+                        finish();
+                    */
+                    mBtn_SI1132.setChecked(false);
+                    mBtn_SI702x.setChecked(false);
+                    insmodBMP085();
+                    mStopBMP085 = false;
+                    handler.postDelayed(mRunnableBMP085, 300);
                 } else {
-                    rmmodI2C();
-                    mStopWeather = true;
-                    closeWeatherBoard();
+                    mLCDHandle = -1;
+                    mStopBMP085 = true;
+                    rmmodBMP085();
                 }
             }
         });
 
         mTV_Temperature = (TextView) findViewById(R.id.tv_temperature);
-        mTV_Humidity = (TextView) findViewById(R.id.tv_humidity);
         mTV_Pressure = (TextView) findViewById(R.id.tv_pressure);
-        mTV_Altitude = (TextView) findViewById(R.id.tv_altitude);
-        //BME280 }}}
+        //BMP085 }}}
 
         //SI1173 {{{
-        mTV_UV_index = (TextView) findViewById(R.id.tv_uv_index);
-        mTV_Visible = (TextView) findViewById(R.id.tv_visible);
-        mTV_IR = (TextView) findViewById(R.id.tv_ir);
+        mBtn_SI1132 = (ToggleButton) findViewById(R.id.btn_si1132);
+        mBtn_SI1132.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                // TODO Auto-generated method stub
+                if (isChecked) {
+                    mBtn_BMP085.setChecked(false);
+                    mBtn_SI702x.setChecked(false);
+                    insmodSI1132();
+                    mStopSI1132 = false;
+                    handler.postDelayed(mRunnableSI1132, 300);
+                } else {
+                    mLCDHandle = -1;
+                    mStopSI1132 = true;
+                    rmmodSI1132();
+                }
+            }
+        });
+
+        mTV_Visible = (TextView) findViewById(R.id.tv_visible_index);
+        mTV_LUX = (TextView) findViewById(R.id.tv_lux);
+        mTV_UV = (TextView) findViewById(R.id.tv_uv);
+        //SI1132 }}}
+
+        //SI702x {{{
+        mBtn_SI702x = (ToggleButton) findViewById(R.id.btn_si702x);
+        mBtn_SI702x.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                // TODO Auto-generated method stub
+                if (isChecked) {
+                    mBtn_BMP085.setChecked(false);
+                    mBtn_SI1132.setChecked(false);
+                    insmodSI702x();
+                    mStopSI702x = false;
+                    handler.postDelayed(mRunnableSI702x, 300);
+                } else {
+                    mLCDHandle = -1;
+                    mStopSI702x = true;
+                    rmmodSI702x();
+                }
+            }
+        });
+
+        mTV_Temperature2 = (TextView) findViewById(R.id.tv_temperature2);
+        mTV_Humidity = (TextView) findViewById(R.id.tv_humidity);
         //SI1132 }}}
         //I2C }}}
 
@@ -562,9 +440,6 @@ public class MainActivity extends Activity {
                     insmod1Wire();
                     mIDs = new ArrayList<String>();
                     getDS1820ID(mIDs);
-                    if (mIDs.size() == 0)
-                        return;
-
                     mBtn_DS1820_1.setText(mBtn_DS1820_1.getText() + "(" +
                             mIDs.get(0) + ")");
                     if (mIDs.size() > 1) {
@@ -584,9 +459,6 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 // TODO Auto-generated method stub
-                if (mIDs.size() == 0)
-                    return;
-
                 mET_DS1820_Info_1.setText(getDS1820Info(mIDs.get(0)));
             }
         });
@@ -619,11 +491,10 @@ public class MainActivity extends Activity {
         //GPIO {{{
         mBtn_GPIO.setChecked(false);
         //GPIO }}}
-        //PWM {{{
-        mBtn_PWM.setChecked(false);
-        //PWM }}}
         //I2C {{{
-        mBtn_Weather.setChecked(false);
+        mBtn_BMP085.setChecked(false);
+        mBtn_SI1132.setChecked(false);
+        mBtn_SI702x.setChecked(false);
         //I2C }}}
         //UARD {{{
         mBtn_ReadSerial.setChecked(false);
@@ -637,107 +508,78 @@ public class MainActivity extends Activity {
     //GPIO {{{
     public void updateGPIO() {
         int i = 0;
+        int adcValue = 0;
         int ledPos = 0;
-        int adcValue = analogRead(PORT_ADC1);
-        //Log.e(TAG, "updateGPIO adcValue = " + adcValue);
-
-        //added J.
-        //eleminated the hopping of checked checkboxes
-        if (adcValue < 0) adcValue = 0;
-        //if (adcValue > 0) {
-        ledPos = adcValue * ledPorts.length / 1024;
-            //ledPos = (ledPorts.length - (ledPos / 1000));
-        mPB_ADC.setProgress(adcValue);
-        //} else
-        //    ledPos = 0;
+        if ((adcValue = analogRead (PORT_ADC1)) > 0) {
+            adcValue = (4095 - adcValue) / 4;
+            ledPos = (adcValue * ledPorts.length * 1000) / 1024;
+            ledPos = (ledPorts.length - (ledPos / 1000));
+            mPB_ADC.setProgress(adcValue);
+        } else
+            ledPos = 0;
 
         for (i = 0; i < ledPorts.length; i++) {
-            digitalWrite (ledPorts[i], 0);
+            digitalWrite(ledPorts[i], 0);
             mLeds.get(i).setChecked(false);
         }
 
         for (i = 0; i < ledPos; i++) {
-            digitalWrite (ledPorts[i], 1);
+            digitalWrite(ledPorts[i], 1);
             mLeds.get(i).setChecked(true);
         }
 
         if (!mStopGPIO)
             handler.postDelayed(mRunnableGPIO, 100);
     }
+
+    boolean exportGPIO() {
+        try {
+            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
+            for (int port: ledPorts) {
+                os.writeBytes("echo " + port + " > /sys/class/gpio/export\n");
+                os.writeBytes("chmod 666 /sys/class/gpio/gpio" + port + "/direction\n");
+                os.writeBytes("echo out > /sys/class/gpio/gpio" + port + "/direction\n");
+                os.writeBytes("chmod 666 /sys/class/gpio/gpio" + port + "/value\n");
+            }
+            os.flush();
+            Thread.sleep(1000);
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+            return false;
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        return true;
+    }
+
+    boolean unexportGPIO() {
+        try {
+            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
+            for (int port : ledPorts) {
+                os.writeBytes("echo " + port + " > /sys/class/gpio/unexport\n");
+            }
+            os.flush();
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+            return false;
+        }
+
+        return true;
+    }
     //GPIO {{{
 
-    //PWM {{{
-    private void insmodPWM() {
-        try {
-            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
-            os.writeBytes("insmod /system/lib/modules/pwm-meson.ko npwm=" + mPWMCount + "\n");
-            os.writeBytes("insmod /system/lib/modules/pwm-ctrl.ko\n");
-            os.flush();
-            Thread.sleep(100);
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
-    private void rmmodPWM() {
-        try {
-            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
-            os.writeBytes("rmmod pwm_ctrl\n");
-            os.writeBytes("rmmod pwm_meson\n");
-            os.flush();
-            Thread.sleep(100);
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
-    private void setEnablePWM(int index, boolean enable) {
-        try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(mPWMEnableNode + index));
-            if (enable)
-                bw.write("1");
-            else
-                bw.write("0");
-            bw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        //added J.
-        //need to set the frequency
-        try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(mPWMFreqNode + index));
-            bw.write("100000");
-            bw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void setDuty(int index, int duty) {
-        try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(mPWMDutyNode + index));
-            bw.write(Integer.toString(duty));
-            bw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    //PWM }}}
-
     //I2C {{{
-    private void insmodI2C() {
+    //BMP085 {{{
+    private void insmodBMP085() {
         try {
             DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
+            os.writeBytes("insmod /system/lib/modules/i2c-algo-bit.ko\n");
             os.writeBytes("insmod /system/lib/modules/aml_i2c.ko\n");
+            os.writeBytes("insmod /system/lib/modules/bmp085-i2c.ko\n");
             os.flush();
             Thread.sleep(100);
         } catch (IOException e1) {
@@ -749,9 +591,10 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void rmmodI2C() {
+    private void rmmodBMP085() {
         try {
             DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
+            os.writeBytes("rmmod bmp085_i2c\n");
             os.writeBytes("rmmod aml_i2c\n");
             os.flush();
             Thread.sleep(100);
@@ -764,34 +607,199 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void updateWeather() {
-        if (mStopWeather == true)
-            return;
-        mTV_UV_index.setText("UV index : "
-                + String.format("%.2f", (double)getUVindex() / 100.0));
-        mTV_Visible.setText("Visible : "
-                + String.format("%.0f", (double)getVisible()) + " Lux");
-        mTV_IR.setText("IR : "
-                + String.format("%.0f", (double)getIR()) + " Lux");
-        readyData();
-        mTV_Temperature.setText("Temperature : "
-                + String.format("%.2f", getTemperature() / 100.0) + " °C");
-        mTV_Humidity.setText("Humidity : "
-                + String.format("%.2f", getHumidity() / 1024.0) + " %");
-        mTV_Pressure.setText("Pressure : "
-                + String.format("%.2f", getPressure() / 100.0) + " hPa");
-        mTV_Altitude.setText("Altitude : " + getAltitude() + " m");
+    public void updateBMP085() {
+        try {
+            BufferedReader temp_reader = 
+                new BufferedReader(new FileReader(TEMP_INPUT));
 
-        if (!mStopWeather)
-            handler.postDelayed(mRunnableWeather, 1000);
+            String txt = "";
+
+            while((txt = temp_reader.readLine()) != null) {
+                float temp = Float.parseFloat(txt) / 10;
+                mTemperature = String.format("%.1f", temp);
+                mTemperature += " *C";
+                mTV_Temperature.setText(mTemperature);
+            }
+
+            temp_reader.close();
+
+            BufferedReader pressure_reader =
+                new BufferedReader(new FileReader(PRESSURE_INPUT));
+
+            while((txt = pressure_reader.readLine()) != null) {
+                float temp = Float.parseFloat(txt) / 100;
+                mPressure = String.format("%.2f", temp);
+                mPressure += " hPa";
+                mTV_Pressure.setText(mPressure);
+            }
+ 
+            pressure_reader.close();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        if (!mStopBMP085)
+            handler.postDelayed(mRunnableBMP085, 100);
     }
+    //BMP085 }}}
+
+    //SI1132 {{{
+    private void insmodSI1132() {
+        try {
+            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
+            os.writeBytes("insmod /system/lib/modules/i2c-algo-bit.ko\n");
+            os.writeBytes("insmod /system/lib/modules/aml_i2c.ko\n");
+            os.writeBytes("insmod /system/lib/modules/si1132.ko\n");
+            os.flush();
+            Thread.sleep(100);
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    private void rmmodSI1132() {
+        try {
+            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
+            os.writeBytes("rmmod si1132\n");
+            os.writeBytes("rmmod aml_i2c\n");
+            os.flush();
+            Thread.sleep(100);
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    public void updateSI1132() {
+        try {
+            BufferedReader visible_index_reader =
+                new BufferedReader(new FileReader(VISIBLE_INDEX));
+
+            String txt = "";
+
+            while((txt = visible_index_reader.readLine()) != null) {
+                mVisibleLux = txt;
+                mVisibleLux += " Lux(Visible index)";
+                mTV_Visible.setText(mVisibleLux);
+            }
+
+            visible_index_reader.close();
+
+            BufferedReader ir_reader =
+                new BufferedReader(new FileReader(IR_INDEX));
+
+            while((txt = ir_reader.readLine()) != null) {
+                mLux = txt;
+                mLux += " Lux";
+                mTV_LUX.setText(mLux);
+            }
+
+            ir_reader.close();
+
+            BufferedReader uv_reader =
+                new BufferedReader(new FileReader(UV_INDEX));
+
+            while((txt = uv_reader.readLine()) != null) {
+                float temp = Float.parseFloat(txt) / 100;
+                mUV = String.format("%.1f", temp);
+                mUV += " index";
+                mTV_UV.setText(mUV);
+            }
+
+            uv_reader.close();
+
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        if (!mStopSI1132)
+            handler.postDelayed(mRunnableSI1132, 100);
+    }
+    //SI1132 }}}
+
+    //SI702x {{{
+    private void insmodSI702x() {
+        try {
+            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
+            os.writeBytes("insmod /system/lib/modules/i2c-algo-bit.ko\n");
+            os.writeBytes("insmod /system/lib/modules/aml_i2c.ko\n");
+            os.writeBytes("insmod /system/lib/modules/si702x.ko\n");
+            os.flush();
+            Thread.sleep(100);
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    private void rmmodSI702x() {
+        try {
+            DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
+            os.writeBytes("rmmod si702x\n");
+            os.writeBytes("rmmod aml_i2c\n");
+            os.flush();
+            Thread.sleep(100);
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    public void updateSI702x() {
+        try {
+            BufferedReader temperature_reader =
+                new BufferedReader(new FileReader(TEMPERATURE));
+
+            String txt = "";
+
+            while((txt = temperature_reader.readLine()) != null) {
+                float temp = Float.parseFloat(txt);
+                mTemperature2 = String.format("%.1f", temp);
+                mTemperature2 += " *C";
+                mTV_Temperature2.setText(mTemperature2);
+            }
+
+            temperature_reader.close();
+
+            BufferedReader humidity_reader =
+                new BufferedReader(new FileReader(HUMIDITY));
+
+            while((txt = humidity_reader.readLine()) != null) {
+                float temp = Float.parseFloat(txt);
+                mHumidity = String.format("%.2f", temp);
+                mHumidity += " %";
+                mTV_Humidity.setText(mHumidity);
+            }
+
+            humidity_reader.close();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        if (!mStopSI702x)
+            handler.postDelayed(mRunnableSI702x, 100);
+    }
+    //SI702x }}}
     //I2C }}}
 
     //UART {{{
     private void setBaudRate() {
         try {
             DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
-            os.writeBytes("stty -F /dev/ttyS1 115200\n");
+            os.writeBytes("stty -F /dev/ttyS2 1152200\n");
             os.flush();
             Thread.sleep(100);
         } catch (IOException e1) {
@@ -805,7 +813,7 @@ public class MainActivity extends Activity {
 
     private void writeSerial(String data) {
         try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(TTYSx));
+            BufferedWriter bw = new BufferedWriter(new FileWriter(TTYS2));
             bw.write(data);
             bw.close();
         } catch (IOException e) {
@@ -881,21 +889,38 @@ public class MainActivity extends Activity {
     }
     //1-Wire
 
-    public native int wiringPiSetup();
+    private void updateLCDDisplay() {
+        if (mLCDHandle == -1)
+            return;
+
+        // first line
+        lcdPosition(mLCDHandle, 0, 0);
+        for (int i = 0; i < LCD_COL ; i++) {
+            if ( i < mTemperature.length() - 1)
+                lcdPutchar(mLCDHandle, mTemperature.charAt(i));
+            else
+                lcdPutchar(mLCDHandle, ' ');
+        }
+
+        // second line
+        lcdPosition(mLCDHandle, 0, 1);
+        for (int i = 0; i < LCD_COL; i++) {
+            if (i < mPressure.length() - 1)
+                lcdPutchar(mLCDHandle, mPressure.charAt(i));
+            else
+                lcdPutchar(mLCDHandle, ' ');
+        }
+    }
+
     public native int wiringPiSetupSys();
     public native int analogRead(int port);
     public native void digitalWrite(int port, int onoff);
-    public native void pinMode(int port, int value);
-    public native int openWeatherBoard();
-    public native int closeWeatherBoard();
-    public native void readyData();
-    public native int getUVindex();
-    public native float getVisible();
-    public native float getIR();
-    public native int getTemperature();
-    public native int getPressure();
-    public native int getHumidity();
-    public native int getAltitude();
+    public native int lcdInit(int rows, int cols, int bits,
+            int rs, int strb, 
+            int d0, int d1, int d2, int d3, int d4,
+            int d5, int d6, int d7);
+    public native void lcdPosition(int fd, int x, int y);
+    public native void lcdPutchar(int fd, char c);
 
     static {
         System.loadLibrary("wpi_android");
