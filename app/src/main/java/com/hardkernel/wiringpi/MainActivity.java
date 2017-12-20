@@ -174,37 +174,83 @@ public class MainActivity extends Activity {
     private boolean mStopSerial;
     private Button mBtn_WriteSerial;
     private EditText mET_Write;
-    private ToggleButton mBtn_ReadSerial;
-    private EditText mET_Read;
-    private String mLine;
+    private TextView mTV1_data;
+    private TextView mTV2_data;
+    private TextView mTV3_data;
+    private long mUART1_timestamp;
+    private long mUART2_timestamp;
+    private long mUART3_timestamp;
+    private TextView mTV1_timestamp;
+    private TextView mTV2_timestamp;
+    private TextView mTV3_timestamp;
+    private String mData1;
+    private String mData2;
+    private String mData3;
+    private final static String TTYS1 = "/dev/ttyS1";
+    private final static String TTYS2 = "/dev/ttyS2";
+    private final static String TTYS3 = "/dev/ttyS3";
+
     Runnable mRunnableSerial = new Runnable() {
 
         @Override
         public void run() {
             // TODO Auto-generated method stub
 
-            try {
-                BufferedReader br = new BufferedReader(new FileReader(TTYSx));
-                while (!mStopSerial) {
-                    while((mLine = br.readLine()) != null) {
-                        Log.e(TAG, mLine);
+            while (true) {
+                try {
+                    Log.e(TAG, "2{");
+                    BufferedReader br = new BufferedReader(new FileReader(TTYS2));
+                    while((mData1 = br.readLine()) != null) {
+                        Log.e(TAG, "data : " + mData1);
+                        mUART1_timestamp = System.currentTimeMillis();
+                        Log.e(TAG, "time : " + mUART1_timestamp);
                         mHandler.sendEmptyMessage(0);
                     }
+                    Log.e(TAG, "2}");
+
+                    Log.e(TAG, "3{");
+                    br = new BufferedReader(new FileReader(TTYS3));
+                    while((mData2 = br.readLine()) != null) {
+                        mUART2_timestamp = System.currentTimeMillis();
+                        mHandler.sendEmptyMessage(1);
+                    }
+                    Log.e(TAG, "3}");
+
+                    Log.e(TAG, "1{");
+                    br = new BufferedReader(new FileReader(TTYS1));
+                    while((mData3 = br.readLine()) != null) {
+                        mUART3_timestamp = System.currentTimeMillis();
+                        mHandler.sendEmptyMessage(2);
+                    }
+                    Log.e(TAG, "1}");
+
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                br.close();
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
     };
-    private final static String TTYSx = "/dev/ttyS1";
+
     private Handler mHandler = new Handler() {
 
         @Override
         public void handleMessage(Message msg) {
             // TODO Auto-generated method stub
             super.handleMessage(msg);
-            mET_Read.setText(mLine);
+            if (msg.what == 0) {
+                Log.e(TAG, "1 : " + mData1);
+                mTV1_data.setText(mData1);
+                mTV1_timestamp.setText(String.valueOf(mUART1_timestamp));
+            } else if (msg.what == 1) {
+                Log.e(TAG, "2 : " + mData2);
+                mTV2_data.setText(mData2);
+                mTV2_timestamp.setText(String.valueOf(mUART2_timestamp));
+            } else if (msg.what == 2) {
+                Log.e(TAG, "3 : " + mData3);
+                mTV3_data.setText(mData3);
+                mTV3_timestamp.setText(String.valueOf(mUART3_timestamp));
+            }
         }
     };
     //UART }}}
@@ -259,7 +305,6 @@ public class MainActivity extends Activity {
                 mBtn_PWM.setChecked(false);
                 mBtn_Weather.setChecked(false);
                 mBtn_GPIO.setChecked(false);
-                mBtn_ReadSerial.setChecked(false);
                 mBtn_1Wire.setChecked(false);
             }
         });
@@ -498,6 +543,13 @@ public class MainActivity extends Activity {
         //I2C }}}
 
         //UART {{{
+        setBaudRate();
+        mTV1_data = (TextView) findViewById(R.id.tv1_data);
+        mTV2_data = (TextView) findViewById(R.id.tv2_data);
+        mTV3_data = (TextView) findViewById(R.id.tv3_data);
+        mTV1_timestamp = (TextView) findViewById(R.id.tv1_timestamp);
+        mTV2_timestamp = (TextView) findViewById(R.id.tv2_timestamp);
+        mTV3_timestamp = (TextView) findViewById(R.id.tv3_timestamp);
         mET_Write = (EditText) findViewById(R.id.et_write);
         mET_Write.addTextChangedListener(new TextWatcher() {
 
@@ -522,6 +574,8 @@ public class MainActivity extends Activity {
             }
         });
 
+        new Thread(mRunnableSerial).start();
+
         mBtn_WriteSerial = (Button) findViewById(R.id.btn_write_serial);
         mBtn_WriteSerial.setEnabled(false);
         mBtn_WriteSerial.setOnClickListener(new OnClickListener() {
@@ -529,26 +583,12 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 // TODO Auto-generated method stub
-                writeSerial(mET_Write.getText().toString());
+                writeSerial(mET_Write.getText().toString() + "\n");
                 mET_Write.setText("");
+                mStopSerial = false;
             }
         });
 
-        mET_Read = (EditText) findViewById(R.id.et_read);
-        mBtn_ReadSerial = (ToggleButton) findViewById(R.id.btn_read_serial);
-        mBtn_ReadSerial.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                // TODO Auto-generated method stub
-                if (isChecked) {
-                    setBaudRate();
-                    mStopSerial = false;
-                    new Thread(mRunnableSerial).start();
-                } else
-                    mStopSerial = true;
-            }
-        });
         //UART }}}
 
         //1-Wire {{{
@@ -625,9 +665,6 @@ public class MainActivity extends Activity {
         //I2C {{{
         mBtn_Weather.setChecked(false);
         //I2C }}}
-        //UARD {{{
-        mBtn_ReadSerial.setChecked(false);
-        //UART }}}
         //1-Wire {{{
         mBtn_1Wire.setChecked(false);
         //1-Wire }}}
@@ -793,6 +830,10 @@ public class MainActivity extends Activity {
             DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
             os.writeBytes("stty -F /dev/ttyS1 115200\n");
             os.flush();
+            os.writeBytes("stty -F /dev/ttyS2 115200\n");
+            os.flush();
+            os.writeBytes("stty -F /dev/ttyS3 115200\n");
+            os.flush();
             Thread.sleep(100);
         } catch (IOException e1) {
             // TODO Auto-generated catch block
@@ -805,7 +846,8 @@ public class MainActivity extends Activity {
 
     private void writeSerial(String data) {
         try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(TTYSx));
+            Log.e(TAG, "writeSerial(" + data + ")");
+            BufferedWriter bw = new BufferedWriter(new FileWriter(TTYS1));
             bw.write(data);
             bw.close();
         } catch (IOException e) {

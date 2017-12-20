@@ -34,5 +34,8 @@
     <string name="uart_interface">UART interface using the C2 Tinkering Kit</string>
     <string name="uart_interface_link">http://odroid.com/dokuwiki/doku.php?id=en:c2_hardware_uart</string>
     <string name="altitude">Altitude</string>
+    <string name="uart1">UART1 : </string>
+    <string name="uart2">UART2 : </string>
+    <string name="uart3">UART3 : </string>
 
 </resources>
