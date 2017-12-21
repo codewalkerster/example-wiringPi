@@ -17,7 +17,7 @@
     <string name="visible">Visible</string>
     <string name="IR">IR</string>
     <string name="Humidity">Humidity</string>
-    <string name="Write">send string to UART port.</string>
+    <string name="Write">send string to UART port(ttyS1).</string>
     <string name="Read">read UART port.</string>
     <string name="celcius">°C</string>
     <string name="BME280">BME280</string>
@@ -34,8 +34,9 @@
     <string name="uart_interface">UART interface using the C2 Tinkering Kit</string>
     <string name="uart_interface_link">http://odroid.com/dokuwiki/doku.php?id=en:c2_hardware_uart</string>
     <string name="altitude">Altitude</string>
-    <string name="uart1">UART1 : </string>
-    <string name="uart2">UART2 : </string>
-    <string name="uart3">UART3 : </string>
-
+    <string name="uart1">UART1(ttyS1) : </string>
+    <string name="uart2">UART2(ttyS2) : </string>
+    <string name="uart3">UART3(ttyS3) : </string>
+    <string name="millisecond"> millisec</string>
+    <string name="baudrates">baud rates : </string>
 </resources>

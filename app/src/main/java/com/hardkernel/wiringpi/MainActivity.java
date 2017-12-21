@@ -19,6 +19,8 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -28,6 +30,7 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.SeekBar;
+import android.widget.Spinner;
 import android.widget.TabHost;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TabHost.OnTabChangeListener;
@@ -171,63 +174,78 @@ public class MainActivity extends Activity {
     //I2C }}}
 
     //UART {{{
+    private Spinner mSP_Baudradtes;
     private boolean mStopSerial;
     private Button mBtn_WriteSerial;
     private EditText mET_Write;
     private TextView mTV1_data;
     private TextView mTV2_data;
     private TextView mTV3_data;
-    private long mUART1_timestamp;
-    private long mUART2_timestamp;
-    private long mUART3_timestamp;
-    private TextView mTV1_timestamp;
-    private TextView mTV2_timestamp;
-    private TextView mTV3_timestamp;
-    private String mData1;
-    private String mData2;
-    private String mData3;
-    private final static String TTYS1 = "/dev/ttyS1";
-    private final static String TTYS2 = "/dev/ttyS2";
-    private final static String TTYS3 = "/dev/ttyS3";
+    private String mData;
+    private final static String TTYS = "/dev/ttyS";
 
-    Runnable mRunnableSerial = new Runnable() {
+    Runnable mRunnableSerial1 = new Runnable() {
 
         @Override
         public void run() {
             // TODO Auto-generated method stub
+            Message msg = mHandler.obtainMessage();
 
-            while (true) {
-                try {
-                    Log.e(TAG, "2{");
-                    BufferedReader br = new BufferedReader(new FileReader(TTYS2));
-                    while((mData1 = br.readLine()) != null) {
-                        Log.e(TAG, "data : " + mData1);
-                        mUART1_timestamp = System.currentTimeMillis();
-                        Log.e(TAG, "time : " + mUART1_timestamp);
-                        mHandler.sendEmptyMessage(0);
+            try {
+                BufferedReader br = new BufferedReader(new FileReader(TTYS + "2"));
+                    while((mData = br.readLine()) != null) {
+                        msg.obj = (Object)mData;
+                        msg.what = 1;
+                        mHandler.sendMessage(msg);
+                        break;
                     }
-                    Log.e(TAG, "2}");
+                br.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    };
 
-                    Log.e(TAG, "3{");
-                    br = new BufferedReader(new FileReader(TTYS3));
-                    while((mData2 = br.readLine()) != null) {
-                        mUART2_timestamp = System.currentTimeMillis();
-                        mHandler.sendEmptyMessage(1);
+    Runnable mRunnableSerial2 = new Runnable() {
+
+        @Override
+        public void run() {
+            // TODO Auto-generated method stub
+            Message msg = mHandler.obtainMessage();
+
+            try {
+                BufferedReader br = new BufferedReader(new FileReader(TTYS + "3"));
+                    while((mData = br.readLine()) != null) {
+                        msg.obj = (Object)mData;
+                        msg.what = 2;
+                        mHandler.sendMessage(msg);
+                        break;
                     }
-                    Log.e(TAG, "3}");
+                br.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    };
 
-                    Log.e(TAG, "1{");
-                    br = new BufferedReader(new FileReader(TTYS1));
-                    while((mData3 = br.readLine()) != null) {
-                        mUART3_timestamp = System.currentTimeMillis();
-                        mHandler.sendEmptyMessage(2);
+    Runnable mRunnableSerial3 = new Runnable() {
+
+        @Override
+        public void run() {
+            // TODO Auto-generated method stub
+            Message msg = mHandler.obtainMessage();
+
+            try {
+                BufferedReader br = new BufferedReader(new FileReader(TTYS + "1"));
+                    while((mData = br.readLine()) != null) {
+                        msg.obj = (Object)mData;
+                        msg.what = 3;
+                        mHandler.sendMessage(msg);
+                        break;
                     }
-                    Log.e(TAG, "1}");
-
-                    br.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                br.close();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     };
@@ -239,17 +257,17 @@ public class MainActivity extends Activity {
             // TODO Auto-generated method stub
             super.handleMessage(msg);
             if (msg.what == 0) {
-                Log.e(TAG, "1 : " + mData1);
-                mTV1_data.setText(mData1);
-                mTV1_timestamp.setText(String.valueOf(mUART1_timestamp));
+                writeSerial((String)msg.obj, 1);
+                mET_Write.setText("");
             } else if (msg.what == 1) {
-                Log.e(TAG, "2 : " + mData2);
-                mTV2_data.setText(mData2);
-                mTV2_timestamp.setText(String.valueOf(mUART2_timestamp));
+                mTV1_data.setText((String)msg.obj);
+                writeSerial((String)msg.obj, 2);
             } else if (msg.what == 2) {
-                Log.e(TAG, "3 : " + mData3);
-                mTV3_data.setText(mData3);
-                mTV3_timestamp.setText(String.valueOf(mUART3_timestamp));
+                mTV2_data.setText((String)msg.obj);
+                writeSerial((String)msg.obj, 3);
+            } else if (msg.what == 3) {
+                mTV3_data.setText((String)msg.obj);
+                mStopSerial = true;
             }
         }
     };
@@ -543,13 +561,28 @@ public class MainActivity extends Activity {
         //I2C }}}
 
         //UART {{{
-        setBaudRate();
+        String baudrates[] = { "4800", "9600", "115200" };
+        mSP_Baudradtes = (Spinner) findViewById(R.id.spinner_baudrates);
+        ArrayAdapter<String> spinnerArrayAdapter = new ArrayAdapter<String>
+            (this, android.R.layout.simple_spinner_item, baudrates);
+        spinnerArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mSP_Baudradtes.setAdapter(spinnerArrayAdapter);
+        mSP_Baudradtes.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String baudrate = (String)mSP_Baudradtes.getSelectedItem();
+                setBaudRate(Integer.parseInt(baudrate));
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
         mTV1_data = (TextView) findViewById(R.id.tv1_data);
         mTV2_data = (TextView) findViewById(R.id.tv2_data);
         mTV3_data = (TextView) findViewById(R.id.tv3_data);
-        mTV1_timestamp = (TextView) findViewById(R.id.tv1_timestamp);
-        mTV2_timestamp = (TextView) findViewById(R.id.tv2_timestamp);
-        mTV3_timestamp = (TextView) findViewById(R.id.tv3_timestamp);
         mET_Write = (EditText) findViewById(R.id.et_write);
         mET_Write.addTextChangedListener(new TextWatcher() {
 
@@ -574,21 +607,24 @@ public class MainActivity extends Activity {
             }
         });
 
-        new Thread(mRunnableSerial).start();
-
         mBtn_WriteSerial = (Button) findViewById(R.id.btn_write_serial);
         mBtn_WriteSerial.setEnabled(false);
         mBtn_WriteSerial.setOnClickListener(new OnClickListener() {
 
             @Override
             public void onClick(View v) {
-                // TODO Auto-generated method stub
-                writeSerial(mET_Write.getText().toString() + "\n");
-                mET_Write.setText("");
                 mStopSerial = false;
+                new Thread(mRunnableSerial1).start();
+                new Thread(mRunnableSerial2).start();
+                new Thread(mRunnableSerial3).start();
+
+                // TODO Auto-generated method stub
+                Message msg = mHandler.obtainMessage();
+                msg.obj = (Object)mET_Write.getText().toString();
+                msg.what = 0;
+                mHandler.sendMessageDelayed(msg, 100);
             }
         });
-
         //UART }}}
 
         //1-Wire {{{
@@ -655,7 +691,8 @@ public class MainActivity extends Activity {
     protected void onPause() {
         // TODO Auto-generated method stub
         super.onPause();
-        
+        mStopSerial = true;
+
         //GPIO {{{
         mBtn_GPIO.setChecked(false);
         //GPIO }}}
@@ -825,14 +862,15 @@ public class MainActivity extends Activity {
     //I2C }}}
 
     //UART {{{
-    private void setBaudRate() {
+    private void setBaudRate(int baudrate) {
+        Log.e(TAG, "setBaudRate " + baudrate);
         try {
             DataOutputStream os = new DataOutputStream(mProcess.getOutputStream());
-            os.writeBytes("stty -F /dev/ttyS1 115200\n");
+            os.writeBytes("stty -F /dev/ttyS1 raw " + baudrate + " cs8 -hupcl ignbrk -icrnl -ixon -opost -isig -icanon -iexten -echo > /dev/null 2>&1");
             os.flush();
-            os.writeBytes("stty -F /dev/ttyS2 115200\n");
+            os.writeBytes("stty -F /dev/ttyS2 raw " + baudrate + " cs8 -hupcl ignbrk -icrnl -ixon -opost -isig -icanon -iexten -echo > /dev/null 2>&1");
             os.flush();
-            os.writeBytes("stty -F /dev/ttyS3 115200\n");
+            os.writeBytes("stty -F /dev/ttyS3 raw " + baudrate + " cs8 -hupcl ignbrk -icrnl -ixon -opost -isig -icanon -iexten -echo > /dev/null 2>&1");
             os.flush();
             Thread.sleep(100);
         } catch (IOException e1) {
@@ -844,11 +882,12 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void writeSerial(String data) {
+    private void writeSerial(String data, int serial) {
         try {
-            Log.e(TAG, "writeSerial(" + data + ")");
-            BufferedWriter bw = new BufferedWriter(new FileWriter(TTYS1));
-            bw.write(data);
+            BufferedWriter bw = new BufferedWriter(new FileWriter(TTYS + String.valueOf(serial)));
+            Log.e(TAG, "write data : " + data + ", node : " + TTYS + String.valueOf(serial));
+            bw.write(data + "\n");
+            bw.flush();
             bw.close();
         } catch (IOException e) {
             e.printStackTrace();
